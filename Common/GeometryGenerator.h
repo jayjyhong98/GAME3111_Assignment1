@@ -97,7 +97,7 @@ public:
 	/// The bottom and top radius can vary to form various cone shapes rather than true
 	// cylinders.  The slices and stacks parameters control the degree of tessellation.
 	///</summary>
-	//MeshData CreateCone(float Radius, float height, uint32 sliceCount, uint32 stackCount);
+	MeshData CreateCone(float Radius, float height, uint32 sliceCount, uint32 stackCount);
 
     MeshData CreateCylinder(float bottomRadius, float topRadius, float height, uint32 sliceCount, uint32 stackCount);
 
