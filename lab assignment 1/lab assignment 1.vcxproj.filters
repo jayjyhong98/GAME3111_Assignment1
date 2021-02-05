@@ -16,6 +16,9 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{fd645348-a072-45b7-a99b-7f5076eec50c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shape">
+      <UniqueIdentifier>{329945f5-14c9-44f4-8bcc-402caa6606a7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Common\Camera.cpp">
@@ -44,6 +47,12 @@
     </ClCompile>
     <ClCompile Include="Triangle0.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="FrameResource.cpp">
+      <Filter>Shape</Filter>
+    </ClCompile>
+    <ClCompile Include="Week4-1-ShapesAppUsingDescriptorTable.cpp">
+      <Filter>Shape</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -81,6 +90,9 @@
     </ClInclude>
     <ClInclude Include="..\Common\UploadBuffer.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FrameResource.h">
+      <Filter>Shape</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
