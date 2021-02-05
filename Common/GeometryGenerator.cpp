@@ -379,10 +379,10 @@ GeometryGenerator::MeshData GeometryGenerator::CreateGeosphere(float radius, uin
     return meshData;
 }
 
-//GeometryGenerator::MeshData GeometryGenerator::CreateCone(float Radius, float height, uint32 sliceCount, uint32 stackCount)
-//{
-//	return CreateCylinder(Radius, 0.f, height, sliceCount, stackCount);
-//}
+GeometryGenerator::MeshData GeometryGenerator::CreateCone(float Radius, float height, uint32 sliceCount, uint32 stackCount)
+{
+	return CreateCylinder(Radius, 0.f, height, sliceCount, stackCount);
+}
 
 GeometryGenerator::MeshData GeometryGenerator::CreateCylinder(float bottomRadius, float topRadius, float height, uint32 sliceCount, uint32 stackCount)
 {
