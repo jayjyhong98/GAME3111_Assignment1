@@ -101,6 +101,10 @@ public:
 
     MeshData CreateCylinder(float bottomRadius, float topRadius, float height, uint32 sliceCount, uint32 stackCount);
 
+	MeshData CreateWedge(float fWidth, float fHeight, float fDepth, uint32 numSubdivisions);
+
+	MeshData CreatePyramid(float fWidth, float fHeight, float fDepth, uint32 numSubdivisions);
+
 	///<summary>
 	/// Creates an mxn grid in the xz-plane with m rows and n columns, centered
 	/// at the origin with the specified width and depth.
