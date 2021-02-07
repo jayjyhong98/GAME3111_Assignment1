@@ -105,6 +105,12 @@ public:
 
 	MeshData CreatePyramid(float fWidth, float fHeight, float fDepth, uint32 numSubdivisions);
 
+	MeshData CreateDiamond(float fWidth, float fHeight, float fDepth, uint32 numSubdivisions);
+
+	MeshData CreateTriangularPrism(float fWidth, float fHeight, float fDepth, uint32 numSubdivisions);
+
+	MeshData CreatePentagonalPrism(float fWidth, float fHeight, float fDepth, uint32 numSubdivisions);
+
 	///<summary>
 	/// Creates an mxn grid in the xz-plane with m rows and n columns, centered
 	/// at the origin with the specified width and depth.
