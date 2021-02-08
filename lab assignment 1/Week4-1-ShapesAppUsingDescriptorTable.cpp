@@ -678,13 +678,13 @@ void ShapesApp::BuildShapeGeometry()
 	for(size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
 	{
 		vertices[k].Pos = cylinder.Vertices[i].Position;
-		vertices[k].Color = XMFLOAT4(DirectX::Colors::SteelBlue);
+		vertices[k].Color = XMFLOAT4(DirectX::Colors::SaddleBrown);
 	}
 
     for (size_t i = 0; i < cone.Vertices.size(); ++i, ++k)
     {
         vertices[k].Pos = cone.Vertices[i].Position;
-        vertices[k].Color = XMFLOAT4(DirectX::Colors::SandyBrown);
+        vertices[k].Color = XMFLOAT4(DirectX::Colors::Green);
     }
 
     for (size_t i = 0; i < wedge.Vertices.size(); ++i, ++k)
@@ -823,6 +823,7 @@ void ShapesApp::BuildRenderItems()
 
     UINT Index = 0;
 
+    // front box
 	auto boxRItem = std::make_unique<RenderItem>();
 	XMStoreFloat4x4(&boxRItem->World, XMMatrixScaling(8.0f, 13.0f, 8.0f)*XMMatrixTranslation(0.0f, 2.5f, -20.0f));
 	boxRItem->ObjCBIndex = Index++;
@@ -833,6 +834,7 @@ void ShapesApp::BuildRenderItems()
 	boxRItem->BaseVertexLocation = boxRItem->Geo->DrawArgs["box"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(boxRItem));
 
+    // tower with wedges
     for (unsigned int i = 0; i < 3; i++)
     {
         float sizeZ = 27.0f;
@@ -894,25 +896,52 @@ void ShapesApp::BuildRenderItems()
         mAllRitems.push_back(std::move(wedgeRitem));
     }
 
-    //boxRItem = std::make_unique<RenderItem>();
-    //XMStoreFloat4x4(&boxRItem->World, XMMatrixScaling(27.0f, 20.0f, 27.0f) * XMMatrixTranslation(0.0f, 3.9f, 5.0f));
-    //boxRItem->ObjCBIndex = Index++;
-    //boxRItem->Geo = mGeometries["shapeGeo"].get();
-    //boxRItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    //boxRItem->IndexCount = boxRItem->Geo->DrawArgs["box"].IndexCount;
-    //boxRItem->StartIndexLocation = baseRitem1->Geo->DrawArgs["box"].StartIndexLocation;
-    //boxRItem->BaseVertexLocation = baseRitem1->Geo->DrawArgs["box"].BaseVertexLocation;
-    //mAllRitems.push_back(std::move(boxRItem));
+    // trees
+    for (int i = -3; i < 4; i++)
+    {
+        // left side
+        auto coneRitem = std::make_unique<RenderItem>();
+        XMStoreFloat4x4(&coneRitem->World, XMMatrixScaling(5.0f, 3.0f, 5.0f) * XMMatrixTranslation(-25.0f, 7.0f, -7.5f * i));
+        coneRitem->ObjCBIndex = Index++;
+        coneRitem->Geo = mGeometries["shapeGeo"].get();
+        coneRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
+        coneRitem->StartIndexLocation = coneRitem->Geo->DrawArgs["cone"].StartIndexLocation;
+        coneRitem->BaseVertexLocation = coneRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
+        mAllRitems.push_back(std::move(coneRitem));
 
-    auto coneRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&coneRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(0.0f, 2.5f, 0.0f));
-    coneRitem->ObjCBIndex = Index++;
-    coneRitem->Geo = mGeometries["shapeGeo"].get();
-    coneRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
-    coneRitem->StartIndexLocation = coneRitem->Geo->DrawArgs["cone"].StartIndexLocation;
-    coneRitem->BaseVertexLocation = coneRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
-    mAllRitems.push_back(std::move(coneRitem));
+        auto cylinderRitem = std::make_unique<RenderItem>();
+        XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.5f, 1.0f, 1.5f) * XMMatrixTranslation(-25.0f, 1.0f, -7.5f * i));
+        cylinderRitem->ObjCBIndex = Index++;
+        cylinderRitem->Geo = mGeometries["shapeGeo"].get();
+        cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
+        cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
+        cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+        mAllRitems.push_back(std::move(cylinderRitem));
+
+        // right side
+        coneRitem = std::make_unique<RenderItem>();
+        XMStoreFloat4x4(&coneRitem->World, XMMatrixScaling(5.0f, 3.0f, 5.0f) * XMMatrixTranslation(25.0f, 7.0f, -7.5f * i));
+        coneRitem->ObjCBIndex = Index++;
+        coneRitem->Geo = mGeometries["shapeGeo"].get();
+        coneRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
+        coneRitem->StartIndexLocation = coneRitem->Geo->DrawArgs["cone"].StartIndexLocation;
+        coneRitem->BaseVertexLocation = coneRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
+        mAllRitems.push_back(std::move(coneRitem));
+
+        cylinderRitem = std::make_unique<RenderItem>();
+        XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.5f, 1.0f, 1.5f) * XMMatrixTranslation(25.0f, 1.0f, -7.5f * i));
+        cylinderRitem->ObjCBIndex = Index++;
+        cylinderRitem->Geo = mGeometries["shapeGeo"].get();
+        cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
+        cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
+        cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+        mAllRitems.push_back(std::move(cylinderRitem));
+    }
+    //--------------------------------------------------------------------------------------------------------------------------------
 
     auto pyramidRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(-3.0f, 2.5f, 0.0f));
