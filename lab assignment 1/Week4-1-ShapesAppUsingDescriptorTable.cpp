@@ -1023,7 +1023,7 @@ void ShapesApp::BuildRenderItems()
         mAllRitems.push_back(std::move(pyramidRitem));
     }
 
-    // uppermost roof
+    // pyramid roofs
     auto pyramidRitem = std::make_unique<RenderItem>();
     pyramidRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(15.4f, 4.0f, 15.4f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(0.0f, 32.5f, 5.0f)); // 22 for back
@@ -1044,6 +1044,18 @@ void ShapesApp::BuildRenderItems()
     triangularprismRitem->StartIndexLocation = triangularprismRitem->Geo->DrawArgs["triangularprism"].StartIndexLocation;
     triangularprismRitem->BaseVertexLocation = triangularprismRitem->Geo->DrawArgs["triangularprism"].BaseVertexLocation;
     mAllRitems.push_back(std::move(triangularprismRitem));
+
+    pyramidRitem = std::make_unique<RenderItem>();
+    pyramidRitem = std::make_unique<RenderItem>();
+    XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(9.0f, 3.0f, 9.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(0.0f, 8.0f, -20.0f)); // 22 for back
+    pyramidRitem->ObjCBIndex = Index++;
+    pyramidRitem->Geo = mGeometries["shapeGeo"].get();
+    pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
+    pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
+    pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
+    mAllRitems.push_back(std::move(pyramidRitem));
+
 
     // World = Scale * Rotation * Translation
     // Rotation = RotX * RotY * RotZ;
