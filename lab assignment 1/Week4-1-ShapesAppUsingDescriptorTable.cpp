@@ -821,6 +821,9 @@ void ShapesApp::BuildFrameResources()
 void ShapesApp::BuildRenderItems()
 {
 
+    // World = Scale * Rotation * Translation
+    // Rotation = RotX * RotY * RotZ;
+
     UINT Index = 0;
 
     // front box
@@ -1056,11 +1059,9 @@ void ShapesApp::BuildRenderItems()
     pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
     mAllRitems.push_back(std::move(pyramidRitem));
 
-
-    // World = Scale * Rotation * Translation
-    // Rotation = RotX * RotY * RotZ;
+    // lanterns
     auto diamondRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(-3.0f, 4.5f, 0.0f));
+    XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(1.0f, 2.0f, 1.0f) * XMMatrixTranslation(-6.5f, 4.2f, -26.5f));
     diamondRitem->ObjCBIndex = Index++; // need to be changed
     diamondRitem->Geo = mGeometries["shapeGeo"].get();
     diamondRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -1068,6 +1069,30 @@ void ShapesApp::BuildRenderItems()
     diamondRitem->StartIndexLocation = diamondRitem->Geo->DrawArgs["diamond"].StartIndexLocation;
     diamondRitem->BaseVertexLocation = diamondRitem->Geo->DrawArgs["diamond"].BaseVertexLocation;
     mAllRitems.push_back(std::move(diamondRitem));
+
+    diamondRitem = std::make_unique<RenderItem>();
+    XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(1.0f, 2.0f, 1.0f)* XMMatrixTranslation(6.5f, 4.2f, -26.5f));
+    diamondRitem->ObjCBIndex = Index++; // need to be changed
+    diamondRitem->Geo = mGeometries["shapeGeo"].get();
+    diamondRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    diamondRitem->IndexCount = diamondRitem->Geo->DrawArgs["diamond"].IndexCount;
+    diamondRitem->StartIndexLocation = diamondRitem->Geo->DrawArgs["diamond"].StartIndexLocation;
+    diamondRitem->BaseVertexLocation = diamondRitem->Geo->DrawArgs["diamond"].BaseVertexLocation;
+    mAllRitems.push_back(std::move(diamondRitem));
+
+    // top lanterns
+    for (int i = -2; i < 3; i++)
+    {
+        diamondRitem = std::make_unique<RenderItem>();
+        XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(1.0f, 2.0f, 1.0f) * XMMatrixTranslation(0.0f + (i * 5.0), 27.0f, -10.0f));
+        diamondRitem->ObjCBIndex = Index++; // need to be changed
+        diamondRitem->Geo = mGeometries["shapeGeo"].get();
+        diamondRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        diamondRitem->IndexCount = diamondRitem->Geo->DrawArgs["diamond"].IndexCount;
+        diamondRitem->StartIndexLocation = diamondRitem->Geo->DrawArgs["diamond"].StartIndexLocation;
+        diamondRitem->BaseVertexLocation = diamondRitem->Geo->DrawArgs["diamond"].BaseVertexLocation;
+        mAllRitems.push_back(std::move(diamondRitem));
+    }
 
     auto gridRitem = std::make_unique<RenderItem>();
     //gridRitem->World = MathHelper::Identity4x4();
