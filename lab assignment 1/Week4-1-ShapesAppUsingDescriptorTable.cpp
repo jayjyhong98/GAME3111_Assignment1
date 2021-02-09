@@ -838,7 +838,7 @@ void ShapesApp::BuildRenderItems()
 	mAllRitems.push_back(std::move(boxRItem));
 
     auto pentagonalprismRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&pentagonalprismRitem->World, XMMatrixScaling(4.0f, 0.5f, 4.0f) * XMMatrixRotationX(-1.57f) * XMMatrixTranslation(0.0f, 12.0f, -18.0));
+    XMStoreFloat4x4(&pentagonalprismRitem->World, XMMatrixScaling(4.0f, 0.5f, 4.0f) * XMMatrixRotationX(-1.57f) * XMMatrixTranslation(0.0f, 12.0f, -18.0f));
     pentagonalprismRitem->ObjCBIndex = Index++; // need to be changed
     pentagonalprismRitem->Geo = mGeometries["shapeGeo"].get();
     pentagonalprismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -853,7 +853,7 @@ void ShapesApp::BuildRenderItems()
         float sizeZ = 27.0f;
 
         boxRItem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&boxRItem->World, XMMatrixScaling(sizeZ - (4.0 * i), 20.0f, sizeZ - (4.0 * i)) * XMMatrixTranslation(0.0f, 3.9f + (7.0 * i), 5.0f));
+        XMStoreFloat4x4(&boxRItem->World, XMMatrixScaling(sizeZ - (4.0f * i), 20.0f, sizeZ - (4.0f * i)) * XMMatrixTranslation(0.0f, 3.9f + (7.0f * i), 5.0f));
         boxRItem->ObjCBIndex = Index++;
         boxRItem->Geo = mGeometries["shapeGeo"].get();
         boxRItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -864,10 +864,10 @@ void ShapesApp::BuildRenderItems()
 
         auto wedgeRitem = std::make_unique<RenderItem>();
 
-        XMMATRIX frontWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0 * i)) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 8.5f + (7.0 * i), -17.0f + (3.0 * i));
-	    XMMATRIX backWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0 * i)) * XMMatrixRotationY(1.57f) * XMMatrixTranslation(0.0f, 8.5f + (7.0 * i), 27.0f - (3.0 * i));
-	    XMMATRIX leftWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0 * i)) * XMMatrixTranslation(-22.0f + (3.0 * i), 8.5f + (7.0 * i), 5.0f);
-	    XMMATRIX rightWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0 * i)) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(22.0f - (3.0 * i), 8.5f + (7.0 * i), 5.0f);
+        XMMATRIX frontWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0f * i)) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 8.5f + (7.0f * i), -17.0f + (3.0f * i));
+	    XMMATRIX backWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0f * i)) * XMMatrixRotationY(1.57f) * XMMatrixTranslation(0.0f, 8.5f + (7.0f * i), 27.0f - (3.0f * i));
+	    XMMATRIX leftWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0f * i)) * XMMatrixTranslation(-22.0f + (3.0f * i), 8.5f + (7.0f * i), 5.0f);
+	    XMMATRIX rightWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0f * i)) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(22.0f - (3.0f * i), 8.5f + (7.0f * i), 5.0f);
 
         XMStoreFloat4x4(&wedgeRitem->World, frontWedgeWorld);
         wedgeRitem->ObjCBIndex = Index++;
@@ -1105,7 +1105,7 @@ void ShapesApp::BuildRenderItems()
     for (int i = -2; i < 3; i++)
     {
         diamondRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(1.0f, 2.0f, 1.0f) * XMMatrixTranslation(0.0f + (i * 5.0), 27.0f, -10.0f));
+        XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(1.0f, 2.0f, 1.0f) * XMMatrixTranslation(0.0f + (i * 5.0f), 27.0f, -10.0f));
         diamondRitem->ObjCBIndex = Index++; // need to be changed
         diamondRitem->Geo = mGeometries["shapeGeo"].get();
         diamondRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
