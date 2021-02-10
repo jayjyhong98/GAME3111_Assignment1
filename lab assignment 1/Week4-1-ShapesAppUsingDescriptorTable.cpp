@@ -837,6 +837,17 @@ void ShapesApp::BuildRenderItems()
 	boxRItem->BaseVertexLocation = boxRItem->Geo->DrawArgs["box"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(boxRItem));
 
+    // front pyramid on front box
+    auto pyramidRitem = std::make_unique<RenderItem>();
+    XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(9.0f, 3.0f, 9.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(0.0f, 8.0f, -20.0f));
+    pyramidRitem->ObjCBIndex = Index++;
+    pyramidRitem->Geo = mGeometries["shapeGeo"].get();
+    pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
+    pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
+    pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
+    mAllRitems.push_back(std::move(pyramidRitem));
+
     auto pentagonalprismRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&pentagonalprismRitem->World, XMMatrixScaling(4.0f, 0.5f, 4.0f) * XMMatrixRotationX(-1.57f) * XMMatrixTranslation(0.0f, 12.0f, -18.0f));
     pentagonalprismRitem->ObjCBIndex = Index++; // need to be changed
@@ -864,10 +875,8 @@ void ShapesApp::BuildRenderItems()
 
         auto wedgeRitem = std::make_unique<RenderItem>();
 
-        XMMATRIX frontWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0f * i)) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 8.5f + (7.0f * i), -17.0f + (3.0f * i));
-	    XMMATRIX backWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0f * i)) * XMMatrixRotationY(1.57f) * XMMatrixTranslation(0.0f, 8.5f + (7.0f * i), 27.0f - (3.0f * i));
-	    XMMATRIX leftWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0f * i)) * XMMatrixTranslation(-22.0f + (3.0f * i), 8.5f + (7.0f * i), 5.0f);
-	    XMMATRIX rightWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0f * i)) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(22.0f - (3.0f * i), 8.5f + (7.0f * i), 5.0f);
+        XMMATRIX frontWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0 * i)) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 8.5f + (7.0 * i), -17.0f + (3.0 * i));
+	    XMMATRIX backWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0 * i)) * XMMatrixRotationY(1.57f) * XMMatrixTranslation(0.0f, 8.5f + (7.0 * i), 27.0f - (3.0 * i));
 
         XMStoreFloat4x4(&wedgeRitem->World, frontWedgeWorld);
         wedgeRitem->ObjCBIndex = Index++;
@@ -887,6 +896,9 @@ void ShapesApp::BuildRenderItems()
         wedgeRitem->StartIndexLocation = wedgeRitem->Geo->DrawArgs["wedge"].StartIndexLocation;
         wedgeRitem->BaseVertexLocation = wedgeRitem->Geo->DrawArgs["wedge"].BaseVertexLocation;
         mAllRitems.push_back(std::move(wedgeRitem));
+
+        XMMATRIX leftWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0 * i)) * XMMatrixTranslation(-22.0f + (3.0 * i), 8.5f + (7.0 * i), 5.0f);
+        XMMATRIX rightWedgeWorld = XMMatrixScaling(3.0f, 1.0f, sizeZ - (4.0 * i)) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(22.0f - (3.0 * i), 8.5f + (7.0 * i), 5.0f);
 
         wedgeRitem = std::make_unique<RenderItem>();
         XMStoreFloat4x4(&wedgeRitem->World, leftWedgeWorld);
@@ -909,74 +921,48 @@ void ShapesApp::BuildRenderItems()
         mAllRitems.push_back(std::move(wedgeRitem));
 
         // continue using prism from earlier
-        XMMATRIX leftPrismWorld = XMMatrixScaling(2.0f, 0.5f, 2.0f) * XMMatrixRotationX(-1.57f) * XMMatrixTranslation(-14.0f + (i * 2.0f), 5.0f + (i * 7.0f), -16.0f + (i * 3.5f));
-        XMMATRIX rightPrismWorld = XMMatrixScaling(2.0f, 0.5f, 2.0f) * XMMatrixRotationX(-1.57f) * XMMatrixTranslation(14.0f - (i * 2.0f), 5.0f + (i * 7.0f), -16.0f + (i * 3.5f));
-
-        pentagonalprismRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&pentagonalprismRitem->World, leftPrismWorld);
-        pentagonalprismRitem->ObjCBIndex = Index++; // need to be changed
-        pentagonalprismRitem->Geo = mGeometries["shapeGeo"].get();
-        pentagonalprismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        pentagonalprismRitem->IndexCount = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].IndexCount;
-        pentagonalprismRitem->StartIndexLocation = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].StartIndexLocation;
-        pentagonalprismRitem->BaseVertexLocation = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].BaseVertexLocation;
-        mAllRitems.push_back(std::move(pentagonalprismRitem));
-
-        pentagonalprismRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&pentagonalprismRitem->World, rightPrismWorld);
-        pentagonalprismRitem->ObjCBIndex = Index++; // need to be changed
-        pentagonalprismRitem->Geo = mGeometries["shapeGeo"].get();
-        pentagonalprismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        pentagonalprismRitem->IndexCount = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].IndexCount;
-        pentagonalprismRitem->StartIndexLocation = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].StartIndexLocation;
-        pentagonalprismRitem->BaseVertexLocation = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].BaseVertexLocation;
-        mAllRitems.push_back(std::move(pentagonalprismRitem));
+        for (int u = -1; u <= 1; u = u + 2) // one for each side
+        {
+            XMMATRIX lrPrismWorld = XMMatrixScaling(2.0f, 0.5f, 2.0f) * XMMatrixRotationX(-1.57f) * XMMatrixTranslation((14.0f - (i * 2.0f)) * u, 5.0f + (i * 7.0f), -16.0f + (i * 3.5f));
+            
+            pentagonalprismRitem = std::make_unique<RenderItem>();
+            XMStoreFloat4x4(&pentagonalprismRitem->World, lrPrismWorld);
+            pentagonalprismRitem->ObjCBIndex = Index++; // need to be changed
+            pentagonalprismRitem->Geo = mGeometries["shapeGeo"].get();
+            pentagonalprismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+            pentagonalprismRitem->IndexCount = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].IndexCount;
+            pentagonalprismRitem->StartIndexLocation = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].StartIndexLocation;
+            pentagonalprismRitem->BaseVertexLocation = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].BaseVertexLocation;
+            mAllRitems.push_back(std::move(pentagonalprismRitem));
+        }
     }
 
     // trees
     for (int i = -3; i < 4; i++)
     {
-        // left side
-        auto coneRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&coneRitem->World, XMMatrixScaling(5.0f, 3.0f, 5.0f) * XMMatrixTranslation(-25.0f, 7.0f, -7.5f * i));
-        coneRitem->ObjCBIndex = Index++;
-        coneRitem->Geo = mGeometries["shapeGeo"].get();
-        coneRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
-        coneRitem->StartIndexLocation = coneRitem->Geo->DrawArgs["cone"].StartIndexLocation;
-        coneRitem->BaseVertexLocation = coneRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
-        mAllRitems.push_back(std::move(coneRitem));
 
-        auto cylinderRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.5f, 1.0f, 1.5f) * XMMatrixTranslation(-25.0f, 1.0f, -7.5f * i));
-        cylinderRitem->ObjCBIndex = Index++;
-        cylinderRitem->Geo = mGeometries["shapeGeo"].get();
-        cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
-        cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-        cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
-        mAllRitems.push_back(std::move(cylinderRitem));
+        for (int u = -1; u <= 1; u = u + 2) // one for each side
+        {
+            auto coneRitem = std::make_unique<RenderItem>();
+            XMStoreFloat4x4(&coneRitem->World, XMMatrixScaling(5.0f, 3.0f, 5.0f) * XMMatrixTranslation(25.0f * u, 7.0f, -7.5f * i));
+            coneRitem->ObjCBIndex = Index++;
+            coneRitem->Geo = mGeometries["shapeGeo"].get();
+            coneRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+            coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
+            coneRitem->StartIndexLocation = coneRitem->Geo->DrawArgs["cone"].StartIndexLocation;
+            coneRitem->BaseVertexLocation = coneRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
+            mAllRitems.push_back(std::move(coneRitem));
 
-        // right side
-        coneRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&coneRitem->World, XMMatrixScaling(5.0f, 3.0f, 5.0f) * XMMatrixTranslation(25.0f, 7.0f, -7.5f * i));
-        coneRitem->ObjCBIndex = Index++;
-        coneRitem->Geo = mGeometries["shapeGeo"].get();
-        coneRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
-        coneRitem->StartIndexLocation = coneRitem->Geo->DrawArgs["cone"].StartIndexLocation;
-        coneRitem->BaseVertexLocation = coneRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
-        mAllRitems.push_back(std::move(coneRitem));
-
-        cylinderRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.5f, 1.0f, 1.5f) * XMMatrixTranslation(25.0f, 1.0f, -7.5f * i));
-        cylinderRitem->ObjCBIndex = Index++;
-        cylinderRitem->Geo = mGeometries["shapeGeo"].get();
-        cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
-        cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
-        cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
-        mAllRitems.push_back(std::move(cylinderRitem));
+            auto cylinderRitem = std::make_unique<RenderItem>();
+            XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.5f, 1.0f, 1.5f) * XMMatrixTranslation(25.0f * u, 1.0f, -7.5f * i));
+            cylinderRitem->ObjCBIndex = Index++;
+            cylinderRitem->Geo = mGeometries["shapeGeo"].get();
+            cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+            cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
+            cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
+            cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+            mAllRitems.push_back(std::move(cylinderRitem));
+        }
     }
     //--------------------------------------------------------------------------------------------------------------------------------
 
@@ -1003,48 +989,35 @@ void ShapesApp::BuildRenderItems()
     mAllRitems.push_back(std::move(triangularprismRitem));
 
     // back pryamid structures
-    auto pyramidRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(10.0f, 4.0f, 4.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(-9.0f, 12.0f, 23.0f)); // 22 for back
-    pyramidRitem->ObjCBIndex = Index++;
-    pyramidRitem->Geo = mGeometries["shapeGeo"].get();
-    pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
-    pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
-    pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
-    mAllRitems.push_back(std::move(pyramidRitem));
+    for (int i = -1; i <= 1; i = i + 2) // one for each side
+    {
+        pyramidRitem = std::make_unique<RenderItem>();
+        XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(10.0f, 4.0f, 4.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(9.0f * i, 12.0f, 23.0f)); // 22 for back
+        pyramidRitem->ObjCBIndex = Index++;
+        pyramidRitem->Geo = mGeometries["shapeGeo"].get();
+        pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
+        pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
+        pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
+        mAllRitems.push_back(std::move(pyramidRitem));
+    }
 
-    pyramidRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(10.0f, 4.0f, 4.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(9.0f, 12.0f, 23.0f)); // 22 for back
-    pyramidRitem->ObjCBIndex = Index++;
-    pyramidRitem->Geo = mGeometries["shapeGeo"].get();
-    pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
-    pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
-    pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
-    mAllRitems.push_back(std::move(pyramidRitem));
 
     // window tops
     for (int i = 0; i < 4; i++)
     {
-        pyramidRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(4.0f, 2.0f, 4.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(-17.0f, 14.0f, -7.0f + (i * 8.0f))); // 22 for back
-        pyramidRitem->ObjCBIndex = Index++;
-        pyramidRitem->Geo = mGeometries["shapeGeo"].get();
-        pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
-        pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
-        pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
-        mAllRitems.push_back(std::move(pyramidRitem));
-
-        pyramidRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(4.0f, 2.0f, 4.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(17.0f, 14.0f, -7.0f + (i * 8.0f))); // 22 for back
-        pyramidRitem->ObjCBIndex = Index++;
-        pyramidRitem->Geo = mGeometries["shapeGeo"].get();
-        pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
-        pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
-        pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
-        mAllRitems.push_back(std::move(pyramidRitem));
+        for (int u = -1; u <= 1; u = u + 2) // one for each side
+        {
+            pyramidRitem = std::make_unique<RenderItem>();
+            XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(4.0f, 2.0f, 4.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(17.0f * u, 14.0f, -7.0f + (i * 8.0f))); // 22 for back
+            pyramidRitem->ObjCBIndex = Index++;
+            pyramidRitem->Geo = mGeometries["shapeGeo"].get();
+            pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+            pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
+            pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
+            pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
+            mAllRitems.push_back(std::move(pyramidRitem));
+        }
     }
 
     // pyramid roofs
@@ -1059,6 +1032,7 @@ void ShapesApp::BuildRenderItems()
     pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
     mAllRitems.push_back(std::move(pyramidRitem));
 
+    // back triangle prism
     triangularprismRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(10.0f, 14.0f, 6.0f)* XMMatrixRotationX(-1.57f)* XMMatrixRotationY(-1.57f)* XMMatrixTranslation(0.0f, 32.0f, 5.0f));
     triangularprismRitem->ObjCBIndex = Index++; // need to be changed
@@ -1069,43 +1043,25 @@ void ShapesApp::BuildRenderItems()
     triangularprismRitem->BaseVertexLocation = triangularprismRitem->Geo->DrawArgs["triangularprism"].BaseVertexLocation;
     mAllRitems.push_back(std::move(triangularprismRitem));
 
-    pyramidRitem = std::make_unique<RenderItem>();
-    pyramidRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(9.0f, 3.0f, 9.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(0.0f, 8.0f, -20.0f));
-    pyramidRitem->ObjCBIndex = Index++;
-    pyramidRitem->Geo = mGeometries["shapeGeo"].get();
-    pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
-    pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
-    pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
-    mAllRitems.push_back(std::move(pyramidRitem));
-
-    // lanterns
-    auto diamondRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(1.0f, 2.0f, 1.0f) * XMMatrixTranslation(-6.5f, 4.2f, -26.5f));
-    diamondRitem->ObjCBIndex = Index++; // need to be changed
-    diamondRitem->Geo = mGeometries["shapeGeo"].get();
-    diamondRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    diamondRitem->IndexCount = diamondRitem->Geo->DrawArgs["diamond"].IndexCount;
-    diamondRitem->StartIndexLocation = diamondRitem->Geo->DrawArgs["diamond"].StartIndexLocation;
-    diamondRitem->BaseVertexLocation = diamondRitem->Geo->DrawArgs["diamond"].BaseVertexLocation;
-    mAllRitems.push_back(std::move(diamondRitem));
-
-    diamondRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(1.0f, 2.0f, 1.0f)* XMMatrixTranslation(6.5f, 4.2f, -26.5f));
-    diamondRitem->ObjCBIndex = Index++; // need to be changed
-    diamondRitem->Geo = mGeometries["shapeGeo"].get();
-    diamondRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    diamondRitem->IndexCount = diamondRitem->Geo->DrawArgs["diamond"].IndexCount;
-    diamondRitem->StartIndexLocation = diamondRitem->Geo->DrawArgs["diamond"].StartIndexLocation;
-    diamondRitem->BaseVertexLocation = diamondRitem->Geo->DrawArgs["diamond"].BaseVertexLocation;
-    mAllRitems.push_back(std::move(diamondRitem));
+    // lower diamond lanterns
+    for (int i = -1; i <= 1; i = i + 2) // one for each side
+    {
+        auto diamondRitem = std::make_unique<RenderItem>();
+        XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(1.0f, 2.0f, 1.0f) * XMMatrixTranslation(6.5f * i, 4.2f, -26.5f));
+        diamondRitem->ObjCBIndex = Index++; // need to be changed
+        diamondRitem->Geo = mGeometries["shapeGeo"].get();
+        diamondRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+        diamondRitem->IndexCount = diamondRitem->Geo->DrawArgs["diamond"].IndexCount;
+        diamondRitem->StartIndexLocation = diamondRitem->Geo->DrawArgs["diamond"].StartIndexLocation;
+        diamondRitem->BaseVertexLocation = diamondRitem->Geo->DrawArgs["diamond"].BaseVertexLocation;
+        mAllRitems.push_back(std::move(diamondRitem));
+    }
 
     // top lanterns
     for (int i = -2; i < 3; i++)
     {
-        diamondRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(1.0f, 2.0f, 1.0f) * XMMatrixTranslation(0.0f + (i * 5.0f), 27.0f, -10.0f));
+        auto diamondRitem = std::make_unique<RenderItem>();
+        XMStoreFloat4x4(&diamondRitem->World, XMMatrixScaling(1.0f, 2.0f, 1.0f) * XMMatrixTranslation(0.0f + (i * 5.0), 27.0f, -10.0f));
         diamondRitem->ObjCBIndex = Index++; // need to be changed
         diamondRitem->Geo = mGeometries["shapeGeo"].get();
         diamondRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -1126,28 +1082,21 @@ void ShapesApp::BuildRenderItems()
     gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
 	mAllRitems.push_back(std::move(gridRitem));
 
-    // more lanterns
+    // sphere lanterns
     for (int i = 0; i < 4; i++)
     {
-        auto sphereRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f)* XMMatrixTranslation(-15.0f, 27.5f, 3.0f + (3.0f * i)));
-        sphereRitem->ObjCBIndex = Index++; // need to be changed
-        sphereRitem->Geo = mGeometries["shapeGeo"].get();
-        sphereRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-        sphereRitem->StartIndexLocation = sphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-        sphereRitem->BaseVertexLocation = sphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-        mAllRitems.push_back(std::move(sphereRitem));
-
-        sphereRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f)* XMMatrixTranslation(15.0f, 27.5f, 3.0f + (3.0f * i)));
-        sphereRitem->ObjCBIndex = Index++; // need to be changed
-        sphereRitem->Geo = mGeometries["shapeGeo"].get();
-        sphereRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-        sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
-        sphereRitem->StartIndexLocation = sphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
-        sphereRitem->BaseVertexLocation = sphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
-        mAllRitems.push_back(std::move(sphereRitem));
+        for (int u = -1; u <= 1; u = u + 2) // one for each side
+        {
+            auto sphereRitem = std::make_unique<RenderItem>();
+            XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(2.0f, 2.0f, 2.0f) * XMMatrixTranslation(15.0f * u, 27.5f, 3.0f + (3.0f * i)));
+            sphereRitem->ObjCBIndex = Index++; // need to be changed
+            sphereRitem->Geo = mGeometries["shapeGeo"].get();
+            sphereRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+            sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
+            sphereRitem->StartIndexLocation = sphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
+            sphereRitem->BaseVertexLocation = sphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+            mAllRitems.push_back(std::move(sphereRitem));
+        }
     }
 
 	// All the render items are opaque.
