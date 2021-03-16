@@ -1,7 +1,5 @@
 ﻿//***************************************************************************************
-// ShapesApp.cpp 
-//
-// Hold down '1' key to view scene in wireframe mode.
+// TexColumnsApp.cpp by Frank Luna (C) 2015 All Rights Reserved.
 //***************************************************************************************
 
 #include "../Common/d3dApp.h"
@@ -23,7 +21,7 @@ const int gNumFrameResources = 3;
 // vary from app-to-app.
 struct RenderItem
 {
-	RenderItem() = default;
+    RenderItem() = default;
     RenderItem(const RenderItem& rhs) = delete;
 
     // World matrix of the shape that describes the object's local space
@@ -33,20 +31,20 @@ struct RenderItem
 
     XMFLOAT4X4 TexTransform = MathHelper::Identity4x4();
 
-	// Dirty flag indicating the object data has changed and we need to update the constant buffer.
-	// Because we have an object cbuffer for each FrameResource, we have to apply the
-	// update to each FrameResource.  Thus, when we modify obect data we should set 
-	// NumFramesDirty = gNumFrameResources so that each frame resource gets the update.
-	int NumFramesDirty = gNumFrameResources;
+    // Dirty flag indicating the object data has changed and we need to update the constant buffer.
+    // Because we have an object cbuffer for each FrameResource, we have to apply the
+    // update to each FrameResource.  Thus, when we modify obect data we should set 
+    // NumFramesDirty = gNumFrameResources so that each frame resource gets the update.
+    int NumFramesDirty = gNumFrameResources;
 
-	// Index into GPU constant buffer corresponding to the ObjectCB for this render item.
-	UINT ObjCBIndex = -1;
+    // Index into GPU constant buffer corresponding to the ObjectCB for this render item.
+    UINT ObjCBIndex = -1;
 
     Material* Mat = nullptr;
-	MeshGeometry* Geo = nullptr;
+    MeshGeometry* Geo = nullptr;
 
     // Primitive topology.
-    D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    D3D12_PRIMITIVE_TOPOLOGY PrimitiveType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 
     // DrawIndexedInstanced parameters.
     UINT IndexCount = 0;
@@ -74,26 +72,25 @@ private:
     virtual void OnMouseMove(WPARAM btnState, int x, int y)override;
 
     void OnKeyboardInput(const GameTimer& gt);
-	void UpdateCamera(const GameTimer& gt);
+    void UpdateCamera(const GameTimer& gt);
     void AnimateMaterials(const GameTimer& gt);
-	void UpdateObjectCBs(const GameTimer& gt);
+    void UpdateObjectCBs(const GameTimer& gt);
     void UpdateMaterialCBs(const GameTimer& gt);
-	void UpdateMainPassCB(const GameTimer& gt);
+    void UpdateMainPassCB(const GameTimer& gt);
 
-    void LoadTextures();
-    void BuildDescriptorHeaps();
-    void BuildConstantBufferViews();
-    void BuildRootSignature();
-    void BuildShadersAndInputLayout();
-    void BuildShapeGeometry();
-    void BuildPSOs();
+    void LoadTextures(); //
+    void BuildRootSignature(); //
+    void BuildDescriptorHeaps(); //
+    void BuildShadersAndInputLayout(); //
+    void BuildShapeGeometry(); //
+    void BuildPSOs(); //
     void BuildFrameResources();
     void BuildMaterials();
     void BuildRenderItems();
     void DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems);
 
     std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> GetStaticSamplers();
- 
+
 private:
 
     std::vector<std::unique_ptr<FrameResource>> mFrameResources;
@@ -103,36 +100,31 @@ private:
     UINT mCbvSrvDescriptorSize = 0;
 
     ComPtr<ID3D12RootSignature> mRootSignature = nullptr;
-    //ComPtr<ID3D12DescriptorHeap> mCbvHeap = nullptr;
 
-	ComPtr<ID3D12DescriptorHeap> mSrvDescriptorHeap = nullptr;
+    ComPtr<ID3D12DescriptorHeap> mSrvDescriptorHeap = nullptr;
 
-	std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> mGeometries;
+    std::unordered_map<std::string, std::unique_ptr<MeshGeometry>> mGeometries;
     std::unordered_map<std::string, std::unique_ptr<Material>> mMaterials;
     std::unordered_map<std::string, std::unique_ptr<Texture>> mTextures;
-	std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
+    std::unordered_map<std::string, ComPtr<ID3DBlob>> mShaders;
     std::unordered_map<std::string, ComPtr<ID3D12PipelineState>> mPSOs;
 
     std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
-	// List of all the render items.
-	std::vector<std::unique_ptr<RenderItem>> mAllRitems;
+    // List of all the render items.
+    std::vector<std::unique_ptr<RenderItem>> mAllRitems;
 
-	// Render items divided by PSO.
-	std::vector<RenderItem*> mOpaqueRitems;
+    // Render items divided by PSO.
+    std::vector<RenderItem*> mOpaqueRitems;
 
     PassConstants mMainPassCB;
 
-    UINT mPassCbvOffset = 0;
+    XMFLOAT3 mEyePos = { 0.0f, 0.0f, 0.0f };
+    XMFLOAT4X4 mView = MathHelper::Identity4x4();
+    XMFLOAT4X4 mProj = MathHelper::Identity4x4();
 
-    bool mIsWireframe = false;
-
-	XMFLOAT3 mEyePos = { 0.0f, 0.0f, 0.0f };
-	XMFLOAT4X4 mView = MathHelper::Identity4x4();
-	XMFLOAT4X4 mProj = MathHelper::Identity4x4();
-
-    float mTheta = 1.7f*XM_PI;
-    float mPhi = 0.35f*XM_PI;
+    float mTheta = 1.7f * XM_PI;
+    float mPhi = 0.35f * XM_PI;
     float mRadius = 130.0f;
 
     POINT mLastMousePos;
@@ -149,12 +141,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE prevInstance,
     try
     {
         ShapesApp theApp(hInstance);
-        if(!theApp.Initialize())
+        if (!theApp.Initialize())
             return 0;
 
         return theApp.Run();
     }
-    catch(DxException& e)
+    catch (DxException& e)
     {
         MessageBox(nullptr, e.ToString().c_str(), L"HR Failed", MB_OK);
         return 0;
@@ -168,19 +160,22 @@ ShapesApp::ShapesApp(HINSTANCE hInstance)
 
 ShapesApp::~ShapesApp()
 {
-    if(md3dDevice != nullptr)
+    if (md3dDevice != nullptr)
         FlushCommandQueue();
 }
 
 bool ShapesApp::Initialize()
 {
-    if(!D3DApp::Initialize())
+    if (!D3DApp::Initialize())
         return false;
 
     // Reset the command list to prep for initialization commands.
     ThrowIfFailed(mCommandList->Reset(mDirectCmdListAlloc.Get(), nullptr));
 
+    // Get the increment size of a descriptor in this heap type.  This is hardware specific, 
+    // so we have to query this information.
     mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
 
     LoadTextures();
     BuildRootSignature();
@@ -202,20 +197,20 @@ bool ShapesApp::Initialize()
 
     return true;
 }
- 
+
 void ShapesApp::OnResize()
 {
     D3DApp::OnResize();
 
     // The window resized, so update the aspect ratio and recompute the projection matrix.
-    XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f*MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
+    XMMATRIX P = XMMatrixPerspectiveFovLH(0.25f * MathHelper::Pi, AspectRatio(), 1.0f, 1000.0f);
     XMStoreFloat4x4(&mProj, P);
 }
 
 void ShapesApp::Update(const GameTimer& gt)
 {
     OnKeyboardInput(gt);
-	UpdateCamera(gt);
+    UpdateCamera(gt);
 
     // Cycle through the circular frame resource array.
     mCurrFrameResourceIndex = (mCurrFrameResourceIndex + 1) % gNumFrameResources;
@@ -223,7 +218,7 @@ void ShapesApp::Update(const GameTimer& gt)
 
     // Has the GPU finished processing the commands of the current frame resource?
     // If not, wait until the GPU has completed commands up to this fence point.
-    if(mCurrFrameResource->Fence != 0 && mFence->GetCompletedValue() < mCurrFrameResource->Fence)
+    if (mCurrFrameResource->Fence != 0 && mFence->GetCompletedValue() < mCurrFrameResource->Fence)
     {
         HANDLE eventHandle = CreateEventEx(nullptr, nullptr, false, EVENT_ALL_ACCESS);
         ThrowIfFailed(mFence->SetEventOnCompletion(mCurrFrameResource->Fence, eventHandle));
@@ -231,8 +226,8 @@ void ShapesApp::Update(const GameTimer& gt)
         CloseHandle(eventHandle);
     }
 
-	UpdateObjectCBs(gt);
-	UpdateMainPassCB(gt);
+    AnimateMaterials(gt);
+    UpdateObjectCBs(gt);
     UpdateMaterialCBs(gt);
     UpdateMainPassCB(gt);
 }
@@ -312,11 +307,11 @@ void ShapesApp::OnMouseUp(WPARAM btnState, int x, int y)
 
 void ShapesApp::OnMouseMove(WPARAM btnState, int x, int y)
 {
-    if((btnState & MK_LBUTTON) != 0)
+    if ((btnState & MK_LBUTTON) != 0)
     {
         // Make each pixel correspond to a quarter of a degree.
-        float dx = XMConvertToRadians(0.25f*static_cast<float>(x - mLastMousePos.x));
-        float dy = XMConvertToRadians(0.25f*static_cast<float>(y - mLastMousePos.y));
+        float dx = XMConvertToRadians(0.25f * static_cast<float>(x - mLastMousePos.x));
+        float dy = XMConvertToRadians(0.25f * static_cast<float>(y - mLastMousePos.y));
 
         // Update angles based on input to orbit camera around box.
         mTheta += dx;
@@ -325,11 +320,11 @@ void ShapesApp::OnMouseMove(WPARAM btnState, int x, int y)
         // Restrict the angle mPhi.
         mPhi = MathHelper::Clamp(mPhi, 0.1f, MathHelper::Pi - 0.1f);
     }
-    else if((btnState & MK_RBUTTON) != 0)
+    else if ((btnState & MK_RBUTTON) != 0)
     {
         // Make each pixel correspond to 0.2 unit in the scene.
-        float dx = 0.05f*static_cast<float>(x - mLastMousePos.x);
-        float dy = 0.05f*static_cast<float>(y - mLastMousePos.y);
+        float dx = 0.05f * static_cast<float>(x - mLastMousePos.x);
+        float dy = 0.05f * static_cast<float>(y - mLastMousePos.y);
 
         // Update the camera radius based on input.
         mRadius += dx - dy;
@@ -341,29 +336,25 @@ void ShapesApp::OnMouseMove(WPARAM btnState, int x, int y)
     mLastMousePos.x = x;
     mLastMousePos.y = y;
 }
- 
+
 void ShapesApp::OnKeyboardInput(const GameTimer& gt)
 {
-    if(GetAsyncKeyState('1') & 0x8000)
-        mIsWireframe = true;
-    else
-        mIsWireframe = false;
 }
- 
+
 void ShapesApp::UpdateCamera(const GameTimer& gt)
 {
-	// Convert Spherical to Cartesian coordinates.
-	mEyePos.x = mRadius*sinf(mPhi)*cosf(mTheta);
-	mEyePos.z = mRadius*sinf(mPhi)*sinf(mTheta);
-	mEyePos.y = mRadius*cosf(mPhi);
+    // Convert Spherical to Cartesian coordinates.
+    mEyePos.x = mRadius * sinf(mPhi) * cosf(mTheta);
+    mEyePos.z = mRadius * sinf(mPhi) * sinf(mTheta);
+    mEyePos.y = mRadius * cosf(mPhi);
 
-	// Build the view matrix.
-	XMVECTOR pos = XMVectorSet(mEyePos.x, mEyePos.y, mEyePos.z, 1.0f);
-	XMVECTOR target = XMVectorZero();
-	XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
+    // Build the view matrix.
+    XMVECTOR pos = XMVectorSet(mEyePos.x, mEyePos.y, mEyePos.z, 1.0f);
+    XMVECTOR target = XMVectorZero();
+    XMVECTOR up = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 
-	XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
-	XMStoreFloat4x4(&mView, view);
+    XMMATRIX view = XMMatrixLookAtLH(pos, target, up);
+    XMStoreFloat4x4(&mView, view);
 }
 
 void ShapesApp::AnimateMaterials(const GameTimer& gt)
@@ -373,26 +364,26 @@ void ShapesApp::AnimateMaterials(const GameTimer& gt)
 
 void ShapesApp::UpdateObjectCBs(const GameTimer& gt)
 {
-	auto currObjectCB = mCurrFrameResource->ObjectCB.get();
-	for(auto& e : mAllRitems)
-	{
-		// Only update the cbuffer data if the constants have changed.  
-		// This needs to be tracked per frame resource.
-		if(e->NumFramesDirty > 0)
-		{
-			XMMATRIX world = XMLoadFloat4x4(&e->World);
+    auto currObjectCB = mCurrFrameResource->ObjectCB.get();
+    for (auto& e : mAllRitems)
+    {
+        // Only update the cbuffer data if the constants have changed.  
+        // This needs to be tracked per frame resource.
+        if (e->NumFramesDirty > 0)
+        {
+            XMMATRIX world = XMLoadFloat4x4(&e->World);
             XMMATRIX texTransform = XMLoadFloat4x4(&e->TexTransform);
 
-			ObjectConstants objConstants;
-			XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
+            ObjectConstants objConstants;
+            XMStoreFloat4x4(&objConstants.World, XMMatrixTranspose(world));
             XMStoreFloat4x4(&objConstants.TexTransform, XMMatrixTranspose(texTransform));
 
-			currObjectCB->CopyData(e->ObjCBIndex, objConstants);
+            currObjectCB->CopyData(e->ObjCBIndex, objConstants);
 
-			// Next FrameResource need to be updated too.
-			e->NumFramesDirty--;
-		}
-	}
+            // Next FrameResource need to be updated too.
+            e->NumFramesDirty--;
+        }
+    }
 }
 
 void ShapesApp::UpdateMaterialCBs(const GameTimer& gt)
@@ -484,9 +475,48 @@ void ShapesApp::LoadTextures()
     mTextures[tileTex->Name] = std::move(tileTex);
 }
 
-//If we have 3 frame resources and n render items, then we have three 3n object constant
-//buffers and 3 pass constant buffers.Hence we need 3(n + 1) constant buffer views(CBVs).
-//Thus we will need to modify our CBV heap to include the additional descriptors :
+void ShapesApp::BuildRootSignature()
+{
+    CD3DX12_DESCRIPTOR_RANGE texTable;
+    texTable.Init(
+        D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
+        1,  // number of descriptors
+        0); // register t0
+
+    // Root parameter can be a table, root descriptor or root constants.
+    CD3DX12_ROOT_PARAMETER slotRootParameter[4];
+
+    // Perfomance TIP: Order from most frequent to least frequent.
+    slotRootParameter[0].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
+    slotRootParameter[1].InitAsConstantBufferView(0); // register b0
+    slotRootParameter[2].InitAsConstantBufferView(1); // register b1
+    slotRootParameter[3].InitAsConstantBufferView(2); // register b2
+
+    auto staticSamplers = GetStaticSamplers();
+
+    // A root signature is an array of root parameters.
+    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(4, slotRootParameter,
+        (UINT)staticSamplers.size(), staticSamplers.data(),
+        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
+
+    // create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
+    ComPtr<ID3DBlob> serializedRootSig = nullptr;
+    ComPtr<ID3DBlob> errorBlob = nullptr;
+    HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
+        serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
+
+    if (errorBlob != nullptr)
+    {
+        ::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+    }
+    ThrowIfFailed(hr);
+
+    ThrowIfFailed(md3dDevice->CreateRootSignature(
+        0,
+        serializedRootSig->GetBufferPointer(),
+        serializedRootSig->GetBufferSize(),
+        IID_PPV_ARGS(mRootSignature.GetAddressOf())));
+}
 
 void ShapesApp::BuildDescriptorHeaps()
 {
@@ -532,113 +562,6 @@ void ShapesApp::BuildDescriptorHeaps()
     md3dDevice->CreateShaderResourceView(tileTex.Get(), &srvDesc, hDescriptor);
 }
 
-//assuming we have n renter items, we can populate the CBV heap with the following code where descriptors 0 to n-
-//1 contain the object CBVs for the 0th frame resource, descriptors n to 2n−1 contains the
-//object CBVs for 1st frame resource, descriptors 2n to 3n−1 contain the objects CBVs for
-//the 2nd frame resource, and descriptors 3n, 3n + 1, and 3n + 2 contain the pass CBVs for the
-//0th, 1st, and 2nd frame resource
-//void ShapesApp::BuildConstantBufferViews()
-//{
-//    UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
-//
-//    UINT objCount = (UINT)mOpaqueRitems.size();
-//
-//    // Need a CBV descriptor for each object for each frame resource.
-//    for(int frameIndex = 0; frameIndex < gNumFrameResources; ++frameIndex)
-//    {
-//        auto objectCB = mFrameResources[frameIndex]->ObjectCB->Resource();
-//        for(UINT i = 0; i < objCount; ++i)
-//        {
-//            D3D12_GPU_VIRTUAL_ADDRESS cbAddress = objectCB->GetGPUVirtualAddress();
-//
-//            // Offset to the ith object constant buffer in the buffer.
-//            cbAddress += i*objCBByteSize;
-//
-//            // Offset to the object cbv in the descriptor heap.
-//            int heapIndex = frameIndex*objCount + i;
-//
-//			//we can get a handle to the first descriptor in a heap with the ID3D12DescriptorHeap::GetCPUDescriptorHandleForHeapStart
-//            auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvHeap->GetCPUDescriptorHandleForHeapStart());
-//
-//			//our heap has more than one descriptor,we need to know the size to increment in the heap to get to the next descriptor
-//			//This is hardware specific, so we have to query this information from the device, and it depends on
-//			//the heap type.Recall that our D3DApp class caches this information: 	mCbvSrvUavDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-//            handle.Offset(heapIndex, mCbvSrvUavDescriptorSize);
-//
-//            D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-//            cbvDesc.BufferLocation = cbAddress;
-//            cbvDesc.SizeInBytes = objCBByteSize;
-//
-//            md3dDevice->CreateConstantBufferView(&cbvDesc, handle);
-//        }
-//    }
-//
-//    UINT passCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(PassConstants));
-//
-//    // Last three descriptors are the pass CBVs for each frame resource.
-//    for(int frameIndex = 0; frameIndex < gNumFrameResources; ++frameIndex)
-//    {
-//        auto passCB = mFrameResources[frameIndex]->PassCB->Resource();
-//        D3D12_GPU_VIRTUAL_ADDRESS cbAddress = passCB->GetGPUVirtualAddress();
-//
-//        // Offset to the pass cbv in the descriptor heap.
-//        int heapIndex = mPassCbvOffset + frameIndex;
-//        auto handle = CD3DX12_CPU_DESCRIPTOR_HANDLE(mCbvHeap->GetCPUDescriptorHandleForHeapStart());
-//        handle.Offset(heapIndex, mCbvSrvUavDescriptorSize);
-//
-//        D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
-//        cbvDesc.BufferLocation = cbAddress;
-//        cbvDesc.SizeInBytes = passCBByteSize;
-//        
-//        md3dDevice->CreateConstantBufferView(&cbvDesc, handle);
-//    }
-//}
-
-//A root signature defines what resources need to be bound to the pipeline before issuing a draw call and
-//how those resources get mapped to shader input registers. there is a limit of 64 DWORDs that can be put in a root signature.
-void ShapesApp::BuildRootSignature()
-{
-    CD3DX12_DESCRIPTOR_RANGE texTable;
-    texTable.Init(
-        D3D12_DESCRIPTOR_RANGE_TYPE_SRV,
-        1,  // number of descriptors
-        0); // register t0
-
-    // Root parameter can be a table, root descriptor or root constants.
-    CD3DX12_ROOT_PARAMETER slotRootParameter[4];
-
-    // Perfomance TIP: Order from most frequent to least frequent.
-    slotRootParameter[0].InitAsDescriptorTable(1, &texTable, D3D12_SHADER_VISIBILITY_PIXEL);
-    slotRootParameter[1].InitAsConstantBufferView(0); // register b0
-    slotRootParameter[2].InitAsConstantBufferView(1); // register b1
-    slotRootParameter[3].InitAsConstantBufferView(2); // register b2
-
-    auto staticSamplers = GetStaticSamplers();
-
-    // A root signature is an array of root parameters.
-    CD3DX12_ROOT_SIGNATURE_DESC rootSigDesc(4, slotRootParameter,
-        (UINT)staticSamplers.size(), staticSamplers.data(),
-        D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT);
-
-    // create a root signature with a single slot which points to a descriptor range consisting of a single constant buffer
-    ComPtr<ID3DBlob> serializedRootSig = nullptr;
-    ComPtr<ID3DBlob> errorBlob = nullptr;
-    HRESULT hr = D3D12SerializeRootSignature(&rootSigDesc, D3D_ROOT_SIGNATURE_VERSION_1,
-        serializedRootSig.GetAddressOf(), errorBlob.GetAddressOf());
-
-    if (errorBlob != nullptr)
-    {
-        ::OutputDebugStringA((char*)errorBlob->GetBufferPointer());
-    }
-    ThrowIfFailed(hr);
-
-    ThrowIfFailed(md3dDevice->CreateRootSignature(
-        0,
-        serializedRootSig->GetBufferPointer(),
-        serializedRootSig->GetBufferSize(),
-        IID_PPV_ARGS(mRootSignature.GetAddressOf())));
-}
-
 void ShapesApp::BuildShadersAndInputLayout()
 {
     const D3D_SHADER_MACRO alphaTestDefines[] =
@@ -650,13 +573,10 @@ void ShapesApp::BuildShadersAndInputLayout()
     mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "VS", "vs_5_0");
     mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "PS", "ps_5_0");
 
-    //mShaders["standardVS"] = d3dUtil::LoadBinary(L"Shaders\\Default_vs.cso");
-    //mShaders["opaquePS"] = d3dUtil::LoadBinary(L"Shaders\\Default_ps.cso");
-	
     mInputLayout =
     {
         { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+        { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
 }
@@ -664,10 +584,10 @@ void ShapesApp::BuildShadersAndInputLayout()
 void ShapesApp::BuildShapeGeometry()
 {
     GeometryGenerator geoGen;
-	GeometryGenerator::MeshData box = geoGen.CreateBox(1.0f, 1.0f, 1.0f, 3);
-	GeometryGenerator::MeshData grid = geoGen.CreateGrid(60.0f, 60.0f, 60, 40);
-	GeometryGenerator::MeshData sphere = geoGen.CreateSphere(1.0f, 20, 20);
-	GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(1.0f, 1.0f, 1.0f, 20, 20);
+    GeometryGenerator::MeshData box = geoGen.CreateBox(1.0f, 1.0f, 1.0f, 3);
+    GeometryGenerator::MeshData grid = geoGen.CreateGrid(60.0f, 60.0f, 60, 40);
+    GeometryGenerator::MeshData sphere = geoGen.CreateSphere(1.0f, 20, 20);
+    GeometryGenerator::MeshData cylinder = geoGen.CreateCylinder(1.0f, 1.0f, 1.0f, 20, 20);
     GeometryGenerator::MeshData cone = geoGen.CreateCone(1.0f, 1.0f, 20, 20);
     GeometryGenerator::MeshData wedge = geoGen.CreateWedge(1.0f, 1.0f, 1.0f, 3);
     GeometryGenerator::MeshData pyramid = geoGen.CreatePyramid(1.0f, 1.0f, 1.0f, 3);
@@ -675,16 +595,16 @@ void ShapesApp::BuildShapeGeometry()
     GeometryGenerator::MeshData triangularprism = geoGen.CreateTriangularPrism(1.0f, 1.0f, 1.0f, 3);
     GeometryGenerator::MeshData pentagonalprism = geoGen.CreatePentagonalPrism(1.0f, 1.0f, 1.0f, 3);
 
-	//
-	// We are concatenating all the geometry into one big vertex/index buffer.  So
-	// define the regions in the buffer each submesh covers.
-	//
+    //
+    // We are concatenating all the geometry into one big vertex/index buffer.  So
+    // define the regions in the buffer each submesh covers.
+    //
 
-	// Cache the vertex offsets to each object in the concatenated vertex buffer.
-	UINT boxVertexOffset = 0;
-	UINT gridVertexOffset = (UINT)box.Vertices.size();
-	UINT sphereVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
-	UINT cylinderVertexOffset = sphereVertexOffset + (UINT)sphere.Vertices.size();
+    // Cache the vertex offsets to each object in the concatenated vertex buffer.
+    UINT boxVertexOffset = 0;
+    UINT gridVertexOffset = (UINT)box.Vertices.size();
+    UINT sphereVertexOffset = gridVertexOffset + (UINT)grid.Vertices.size();
+    UINT cylinderVertexOffset = sphereVertexOffset + (UINT)sphere.Vertices.size();
     UINT coneVertexOffset = cylinderVertexOffset + (UINT)cylinder.Vertices.size();
     UINT wedgeVertexOffset = coneVertexOffset + (UINT)cone.Vertices.size();
     UINT pyramidVertexOffset = wedgeVertexOffset + (UINT)wedge.Vertices.size();
@@ -692,11 +612,11 @@ void ShapesApp::BuildShapeGeometry()
     UINT triangularprismVertexOffset = diamondVertexOffset + (UINT)diamond.Vertices.size();
     UINT pentagonalprismVertexOffset = triangularprismVertexOffset + (UINT)triangularprism.Vertices.size();
 
-	// Cache the starting index for each object in the concatenated index buffer.
-	UINT boxIndexOffset = 0;
-	UINT gridIndexOffset = (UINT)box.Indices32.size();
-	UINT sphereIndexOffset = gridIndexOffset + (UINT)grid.Indices32.size();
-	UINT cylinderIndexOffset = sphereIndexOffset + (UINT)sphere.Indices32.size();
+    // Cache the starting index for each object in the concatenated index buffer.
+    UINT boxIndexOffset = 0;
+    UINT gridIndexOffset = (UINT)box.Indices32.size();
+    UINT sphereIndexOffset = gridIndexOffset + (UINT)grid.Indices32.size();
+    UINT cylinderIndexOffset = sphereIndexOffset + (UINT)sphere.Indices32.size();
     UINT coneIndexOffset = cylinderIndexOffset + (UINT)cylinder.Indices32.size();
     UINT wedgeIndexOffset = coneIndexOffset + (UINT)cone.Indices32.size();
     UINT pyramidIndexOffset = wedgeIndexOffset + (UINT)wedge.Indices32.size();
@@ -704,28 +624,25 @@ void ShapesApp::BuildShapeGeometry()
     UINT triangularprismIndexOffset = diamondIndexOffset + (UINT)diamond.Indices32.size();
     UINT pentagonalprismIndexOffset = triangularprismIndexOffset + (UINT)triangularprism.Indices32.size();
 
-    // Define the SubmeshGeometry that cover different 
-    // regions of the vertex/index buffers.
+    SubmeshGeometry boxSubmesh;
+    boxSubmesh.IndexCount = (UINT)box.Indices32.size();
+    boxSubmesh.StartIndexLocation = boxIndexOffset;
+    boxSubmesh.BaseVertexLocation = boxVertexOffset;
 
-	SubmeshGeometry boxSubmesh;
-	boxSubmesh.IndexCount = (UINT)box.Indices32.size();
-	boxSubmesh.StartIndexLocation = boxIndexOffset;
-	boxSubmesh.BaseVertexLocation = boxVertexOffset;
+    SubmeshGeometry gridSubmesh;
+    gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
+    gridSubmesh.StartIndexLocation = gridIndexOffset;
+    gridSubmesh.BaseVertexLocation = gridVertexOffset;
 
-	SubmeshGeometry gridSubmesh;
-	gridSubmesh.IndexCount = (UINT)grid.Indices32.size();
-	gridSubmesh.StartIndexLocation = gridIndexOffset;
-	gridSubmesh.BaseVertexLocation = gridVertexOffset;
+    SubmeshGeometry sphereSubmesh;
+    sphereSubmesh.IndexCount = (UINT)sphere.Indices32.size();
+    sphereSubmesh.StartIndexLocation = sphereIndexOffset;
+    sphereSubmesh.BaseVertexLocation = sphereVertexOffset;
 
-	SubmeshGeometry sphereSubmesh;
-	sphereSubmesh.IndexCount = (UINT)sphere.Indices32.size();
-	sphereSubmesh.StartIndexLocation = sphereIndexOffset;
-	sphereSubmesh.BaseVertexLocation = sphereVertexOffset;
-
-	SubmeshGeometry cylinderSubmesh;
-	cylinderSubmesh.IndexCount = (UINT)cylinder.Indices32.size();
-	cylinderSubmesh.StartIndexLocation = cylinderIndexOffset;
-	cylinderSubmesh.BaseVertexLocation = cylinderVertexOffset;
+    SubmeshGeometry cylinderSubmesh;
+    cylinderSubmesh.IndexCount = (UINT)cylinder.Indices32.size();
+    cylinderSubmesh.StartIndexLocation = cylinderIndexOffset;
+    cylinderSubmesh.BaseVertexLocation = cylinderVertexOffset;
 
     SubmeshGeometry coneSubmesh;
     coneSubmesh.IndexCount = (UINT)cone.Indices32.size();
@@ -757,16 +674,16 @@ void ShapesApp::BuildShapeGeometry()
     pentagonalprismSubmesh.StartIndexLocation = pentagonalprismIndexOffset;
     pentagonalprismSubmesh.BaseVertexLocation = pentagonalprismVertexOffset;
 
-	//
-	// Extract the vertex elements we are interested in and pack the
-	// vertices of all the meshes into one vertex buffer.
-	//
+    //
+    // Extract the vertex elements we are interested in and pack the
+    // vertices of all the meshes into one vertex buffer.
+    //
 
-	auto totalVertexCount =
-		box.Vertices.size() +
-		grid.Vertices.size() +
-		sphere.Vertices.size() +
-		cylinder.Vertices.size() +
+    auto totalVertexCount =
+        box.Vertices.size() +
+        grid.Vertices.size() +
+        sphere.Vertices.size() +
+        cylinder.Vertices.size() +
         cone.Vertices.size() +
         wedge.Vertices.size() +
         pyramid.Vertices.size() +
@@ -774,36 +691,36 @@ void ShapesApp::BuildShapeGeometry()
         triangularprism.Vertices.size() +
         pentagonalprism.Vertices.size();
 
-	std::vector<Vertex> vertices(totalVertexCount);
+    std::vector<Vertex> vertices(totalVertexCount);
 
-	UINT k = 0;
-	for(size_t i = 0; i < box.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = box.Vertices[i].Position;
+    UINT k = 0;
+    for (size_t i = 0; i < box.Vertices.size(); ++i, ++k)
+    {
+        vertices[k].Pos = box.Vertices[i].Position;
         vertices[k].Normal = box.Vertices[i].Normal;
         vertices[k].TexC = box.Vertices[i].TexC;
-	}
+    }
 
-	for(size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = grid.Vertices[i].Position;
+    for (size_t i = 0; i < grid.Vertices.size(); ++i, ++k)
+    {
+        vertices[k].Pos = grid.Vertices[i].Position;
         vertices[k].Normal = grid.Vertices[i].Normal;
         vertices[k].TexC = grid.Vertices[i].TexC;
-	}
+    }
 
-	for(size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = sphere.Vertices[i].Position;
+    for (size_t i = 0; i < sphere.Vertices.size(); ++i, ++k)
+    {
+        vertices[k].Pos = sphere.Vertices[i].Position;
         vertices[k].Normal = sphere.Vertices[i].Normal;
         vertices[k].TexC = sphere.Vertices[i].TexC;
-	}
+    }
 
-	for(size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
-	{
-		vertices[k].Pos = cylinder.Vertices[i].Position;
+    for (size_t i = 0; i < cylinder.Vertices.size(); ++i, ++k)
+    {
+        vertices[k].Pos = cylinder.Vertices[i].Position;
         vertices[k].Normal = cylinder.Vertices[i].Normal;
         vertices[k].TexC = cylinder.Vertices[i].TexC;
-	}
+    }
 
     for (size_t i = 0; i < cone.Vertices.size(); ++i, ++k)
     {
@@ -847,10 +764,10 @@ void ShapesApp::BuildShapeGeometry()
         vertices[k].TexC = pentagonalprism.Vertices[i].TexC;
     }
 
-	std::vector<std::uint16_t> indices;
-	indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
-	indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
-	indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
+    std::vector<std::uint16_t> indices;
+    indices.insert(indices.end(), std::begin(box.GetIndices16()), std::end(box.GetIndices16()));
+    indices.insert(indices.end(), std::begin(grid.GetIndices16()), std::end(grid.GetIndices16()));
+    indices.insert(indices.end(), std::begin(sphere.GetIndices16()), std::end(sphere.GetIndices16()));
     indices.insert(indices.end(), std::begin(cylinder.GetIndices16()), std::end(cylinder.GetIndices16()));
     indices.insert(indices.end(), std::begin(cone.GetIndices16()), std::end(cone.GetIndices16()));
     indices.insert(indices.end(), std::begin(wedge.GetIndices16()), std::end(wedge.GetIndices16()));
@@ -860,40 +777,34 @@ void ShapesApp::BuildShapeGeometry()
     indices.insert(indices.end(), std::begin(pentagonalprism.GetIndices16()), std::end(pentagonalprism.GetIndices16()));
 
     const UINT vbByteSize = (UINT)vertices.size() * sizeof(Vertex);
-    const UINT ibByteSize = (UINT)indices.size()  * sizeof(std::uint16_t);
+    const UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
 
-	auto geo = std::make_unique<MeshGeometry>();
-	geo->Name = "shapeGeo";
+    auto geo = std::make_unique<MeshGeometry>();
+    geo->Name = "shapeGeo";
 
-	ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
-	CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
+    ThrowIfFailed(D3DCreateBlob(vbByteSize, &geo->VertexBufferCPU));
+    CopyMemory(geo->VertexBufferCPU->GetBufferPointer(), vertices.data(), vbByteSize);
 
-	ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
-	CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+    ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+    CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
 
-	geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
+    geo->VertexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+        mCommandList.Get(), vertices.data(), vbByteSize, geo->VertexBufferUploader);
 
-	geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
-		mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
+    geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+        mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
 
-	geo->VertexByteStride = sizeof(Vertex);
-	geo->VertexBufferByteSize = vbByteSize;
-	geo->IndexFormat = DXGI_FORMAT_R16_UINT;
-	geo->IndexBufferByteSize = ibByteSize;
+    geo->VertexByteStride = sizeof(Vertex);
+    geo->VertexBufferByteSize = vbByteSize;
+    geo->IndexFormat = DXGI_FORMAT_R16_UINT;
+    geo->IndexBufferByteSize = ibByteSize;
 
-	geo->DrawArgs["box"] = boxSubmesh;
-	geo->DrawArgs["grid"] = gridSubmesh;
-	geo->DrawArgs["sphere"] = sphereSubmesh;
+    geo->DrawArgs["box"] = boxSubmesh;
+    geo->DrawArgs["grid"] = gridSubmesh;
+    geo->DrawArgs["sphere"] = sphereSubmesh;
     geo->DrawArgs["cylinder"] = cylinderSubmesh;
-    geo->DrawArgs["cone"] = coneSubmesh;
-    geo->DrawArgs["wedge"] = wedgeSubmesh;
-    geo->DrawArgs["pyramid"] = pyramidSubmesh;
-    geo->DrawArgs["diamond"] = diamondSubmesh;
-    geo->DrawArgs["triangularprism"] = triangularprismSubmesh;
-    geo->DrawArgs["pentagonalprism"] = pentagonalprismSubmesh;
 
-	mGeometries[geo->Name] = std::move(geo);
+    mGeometries[geo->Name] = std::move(geo);
 }
 
 void ShapesApp::BuildPSOs()
@@ -927,15 +838,6 @@ void ShapesApp::BuildPSOs()
     opaquePsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
     opaquePsoDesc.DSVFormat = mDepthStencilFormat;
     ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
-
-
-    //
-    // PSO for opaque wireframe objects.
-    //
-
-    //D3D12_GRAPHICS_PIPELINE_STATE_DESC opaqueWireframePsoDesc = opaquePsoDesc;
-    //opaqueWireframePsoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_WIREFRAME;
-    //ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaqueWireframePsoDesc, IID_PPV_ARGS(&mPSOs["opaque_wireframe"])));
 }
 
 void ShapesApp::BuildFrameResources()
@@ -980,23 +882,22 @@ void ShapesApp::BuildMaterials()
 
 void ShapesApp::BuildRenderItems()
 {
-
     // World = Scale * Rotation * Translation
     // Rotation = RotX * RotY * RotZ;
 
     UINT Index = 0;
 
     // front box
-	auto boxRItem = std::make_unique<RenderItem>();
-	XMStoreFloat4x4(&boxRItem->World, XMMatrixScaling(14.0f, 10.0f, 14.0f)*XMMatrixTranslation(0.0f, 3.0f, 0.0f));
-	boxRItem->ObjCBIndex = Index++;
+    auto boxRItem = std::make_unique<RenderItem>();
+    XMStoreFloat4x4(&boxRItem->World, XMMatrixScaling(14.0f, 10.0f, 14.0f) * XMMatrixTranslation(0.0f, 3.0f, 0.0f));
+    boxRItem->ObjCBIndex = Index++;
     boxRItem->Mat = mMaterials["stone0"].get();
     boxRItem->Geo = mGeometries["shapeGeo"].get();
-	boxRItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-	boxRItem->IndexCount = boxRItem->Geo->DrawArgs["box"].IndexCount;
-	boxRItem->StartIndexLocation = boxRItem->Geo->DrawArgs["box"].StartIndexLocation;
-	boxRItem->BaseVertexLocation = boxRItem->Geo->DrawArgs["box"].BaseVertexLocation;
-	mAllRitems.push_back(std::move(boxRItem));
+    boxRItem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    boxRItem->IndexCount = boxRItem->Geo->DrawArgs["box"].IndexCount;
+    boxRItem->StartIndexLocation = boxRItem->Geo->DrawArgs["box"].StartIndexLocation;
+    boxRItem->BaseVertexLocation = boxRItem->Geo->DrawArgs["box"].BaseVertexLocation;
+    mAllRitems.push_back(std::move(boxRItem));
 
     // front pyramid on front box
     auto pyramidRitem = std::make_unique<RenderItem>();
@@ -1040,7 +941,7 @@ void ShapesApp::BuildRenderItems()
         auto wedgeRitem = std::make_unique<RenderItem>();
 
         XMMATRIX frontWedgeWorld = XMMatrixScaling(3.0f, 2.0f, sizeZ - (5.0 * i)) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 10.0f + (8.0 * i), 25.0f - 1.5 - (sizeZ / 2) + (2.5 * i));
-	    XMMATRIX backWedgeWorld = XMMatrixScaling(3.0f, 2.0f, sizeZ - (5.0 * i)) * XMMatrixRotationY(1.57f) * XMMatrixTranslation(0.0f, 10.0f + (8.0 * i), 25.0f + 1.5 + (sizeZ / 2) - (2.5 * i));
+        XMMATRIX backWedgeWorld = XMMatrixScaling(3.0f, 2.0f, sizeZ - (5.0 * i)) * XMMatrixRotationY(1.57f) * XMMatrixTranslation(0.0f, 10.0f + (8.0 * i), 25.0f + 1.5 + (sizeZ / 2) - (2.5 * i));
 
         XMStoreFloat4x4(&wedgeRitem->World, frontWedgeWorld);
         wedgeRitem->ObjCBIndex = Index++;
@@ -1092,7 +993,7 @@ void ShapesApp::BuildRenderItems()
         for (int u = -1; u <= 1; u = u + 2) // one for each side
         {
             XMMATRIX lrPrismWorld = XMMatrixScaling(3.0f, 1.0f, 3.0f) * XMMatrixRotationX(-1.57f) * XMMatrixTranslation((14.0f - (i * 2.0f)) * u, 5.0f + (i * 8.0f), 5.0f + (i * 2.5f));
-            
+
             pentagonalprismRitem = std::make_unique<RenderItem>();
             XMStoreFloat4x4(&pentagonalprismRitem->World, lrPrismWorld);
             pentagonalprismRitem->ObjCBIndex = Index++; // need to be changed
@@ -1151,7 +1052,7 @@ void ShapesApp::BuildRenderItems()
 
     // back triangular structure
     triangularprismRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(8.0f, 32.0f, 10.0f)* XMMatrixRotationX(-1.57f)* XMMatrixRotationY(-1.57f)* XMMatrixTranslation(0.0f, 23.0f, 40.0f));
+    XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(8.0f, 32.0f, 10.0f) * XMMatrixRotationX(-1.57f) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 23.0f, 40.0f));
     triangularprismRitem->ObjCBIndex = Index++; // need to be changed
     triangularprismRitem->Mat = mMaterials["stone0"].get();
     triangularprismRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1165,7 +1066,7 @@ void ShapesApp::BuildRenderItems()
     for (int i = -1; i <= 1; i = i + 2) // one for each side
     {
         pyramidRitem = std::make_unique<RenderItem>();
-        XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(15.0f, 7.0f, 6.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(9.0f * i, 13.5f, 43.0f));
+        XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(15.0f, 7.0f, 6.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(9.0f * i, 13.5f, 43.0f));
         pyramidRitem->ObjCBIndex = Index++;
         pyramidRitem->Mat = mMaterials["stone0"].get();
         pyramidRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1183,7 +1084,7 @@ void ShapesApp::BuildRenderItems()
         for (int u = -1; u <= 1; u = u + 2) // one for each side
         {
             pyramidRitem = std::make_unique<RenderItem>();
-            XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(6.0f, 2.0f, 6.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(18.0f * u, 16.0f, 13.0f + (i * 8.0f)));
+            XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(6.0f, 2.0f, 6.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(18.0f * u, 16.0f, 13.0f + (i * 8.0f)));
             pyramidRitem->ObjCBIndex = Index++;
             pyramidRitem->Mat = mMaterials["stone0"].get();
             pyramidRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1198,7 +1099,7 @@ void ShapesApp::BuildRenderItems()
     // pyramid roofs
     pyramidRitem = std::make_unique<RenderItem>();
     pyramidRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(25.0f, 6.0f, 25.0f)* XMMatrixRotationY(3.14f)* XMMatrixTranslation(0.0f, 37.0f, 25.0f));
+    XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(25.0f, 6.0f, 25.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(0.0f, 37.0f, 25.0f));
     pyramidRitem->ObjCBIndex = Index++;
     pyramidRitem->Mat = mMaterials["stone0"].get();
     pyramidRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1210,7 +1111,7 @@ void ShapesApp::BuildRenderItems()
 
     // top triangle prism
     triangularprismRitem = std::make_unique<RenderItem>();
-    XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(10.0f, 25.0f, 8.0f)* XMMatrixRotationX(-1.57f)* XMMatrixRotationY(-1.57f)* XMMatrixTranslation(0.0f, 38.0f, 25.0f));
+    XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(10.0f, 25.0f, 8.0f) * XMMatrixRotationX(-1.57f) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 38.0f, 25.0f));
     triangularprismRitem->ObjCBIndex = Index++; // need to be changed
     triangularprismRitem->Mat = mMaterials["stone0"].get();
     triangularprismRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1271,22 +1172,20 @@ void ShapesApp::BuildRenderItems()
     auto gridRitem = std::make_unique<RenderItem>();
     //gridRitem->World = MathHelper::Identity4x4();
     XMStoreFloat4x4(&gridRitem->World, XMMatrixScaling(1.5f, 1.5f, 1.5f) * XMMatrixTranslation(0.0f, 0.0f, 20.0f));
-	gridRitem->ObjCBIndex = Index++;
+    gridRitem->ObjCBIndex = Index++;
     gridRitem->Mat = mMaterials["tile0"].get();
     gridRitem->Geo = mGeometries["shapeGeo"].get();
-	gridRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    gridRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
     gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
     gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
-	mAllRitems.push_back(std::move(gridRitem));
+    mAllRitems.push_back(std::move(gridRitem));
 
-	// All the render items are opaque.
-	for(auto& e : mAllRitems)
-		mOpaqueRitems.push_back(e.get());
+    // All the render items are opaque.
+    for (auto& e : mAllRitems)
+        mOpaqueRitems.push_back(e.get());
 }
 
-
-//The DrawRenderItems method is invoked in the main Draw call:
 void ShapesApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
 {
     UINT objCBByteSize = d3dUtil::CalcConstantBufferByteSize(sizeof(ObjectConstants));
@@ -1317,7 +1216,6 @@ void ShapesApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::v
         cmdList->DrawIndexedInstanced(ri->IndexCount, 1, ri->StartIndexLocation, ri->BaseVertexLocation, 0);
     }
 }
-
 
 std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> ShapesApp::GetStaticSamplers()
 {
@@ -1375,3 +1273,4 @@ std::array<const CD3DX12_STATIC_SAMPLER_DESC, 6> ShapesApp::GetStaticSamplers()
         linearWrap, linearClamp,
         anisotropicWrap, anisotropicClamp };
 }
+
