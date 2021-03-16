@@ -56,6 +56,8 @@ struct RenderItem
 enum class RenderLayer : int
 {
     Opaque = 0,
+    Transparent,
+    AlphaTested,
     Count
 };
 
@@ -86,12 +88,12 @@ private:
     void UpdateMainPassCB(const GameTimer& gt);
     void UpdateWaves(const GameTimer& gt);
 
-    void LoadTextures(); 
-    void BuildRootSignature(); 
-    void BuildDescriptorHeaps(); 
-    void BuildShadersAndInputLayout(); 
+    void LoadTextures();
+    void BuildRootSignature();
+    void BuildDescriptorHeaps();
+    void BuildShadersAndInputLayout();
     void BuildWavesGeometry();
-    void BuildShapeGeometry(); 
+    void BuildShapeGeometry();
     void BuildPSOs();
     void BuildFrameResources();
     void BuildMaterials();
@@ -191,12 +193,14 @@ bool ShapesApp::Initialize()
     // so we have to query this information.
     mCbvSrvDescriptorSize = md3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+    mWaves = std::make_unique<Waves>(128, 128, 1.0f, 0.03f, 4.0f, 0.2f);
 
     LoadTextures();
     BuildRootSignature();
     BuildDescriptorHeaps();
     BuildShadersAndInputLayout();
     BuildShapeGeometry();
+    BuildWavesGeometry();
     BuildMaterials();
     BuildRenderItems();
     BuildFrameResources();
@@ -245,6 +249,7 @@ void ShapesApp::Update(const GameTimer& gt)
     UpdateObjectCBs(gt);
     UpdateMaterialCBs(gt);
     UpdateMainPassCB(gt);
+    UpdateWaves(gt);
 }
 
 void ShapesApp::Draw(const GameTimer& gt)
@@ -285,6 +290,17 @@ void ShapesApp::Draw(const GameTimer& gt)
     mCommandList->SetGraphicsRootConstantBufferView(2, passCB->GetGPUVirtualAddress());
 
     DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
+
+    //step 2
+    mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
+    DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTested]);
+
+    // Indicate a state transition on the resource usage.
+    mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
+        D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+
+    mCommandList->SetPipelineState(mPSOs["transparent"].Get());
+    DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Transparent]);
 
     // Indicate a state transition on the resource usage.
     mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -743,15 +759,23 @@ void ShapesApp::BuildDescriptorHeaps()
 
 void ShapesApp::BuildShadersAndInputLayout()
 {
-    const D3D_SHADER_MACRO alphaTestDefines[] =
+    //step3
+    const D3D_SHADER_MACRO defines[] =
     {
         "FOG", "1",
         NULL, NULL
     };
 
+    const D3D_SHADER_MACRO alphaTestDefines[] =
+    {
+        "FOG", "1",
+        "ALPHA_TEST",
+        NULL, NULL
+    };
+
     mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "VS", "vs_5_0");
-    mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "PS", "ps_5_0");
-    //mShaders["alphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", alphaTestDefines, "PS", "ps_5_1");
+    mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", defines, "PS", "ps_5_0");
+    mShaders["alphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", alphaTestDefines, "PS", "ps_5_0");
 
     mInputLayout =
     {
@@ -763,7 +787,7 @@ void ShapesApp::BuildShadersAndInputLayout()
 
 void ShapesApp::BuildWavesGeometry()
 {
-    std::vector<std::uint16_t> indices(3 * mWaves->TriangleCount()); // 3 indices per face
+    std::vector<std::uint32_t> indices(3 * mWaves->TriangleCount()); // 3 indices per face
     assert(mWaves->VertexCount() < 0x0000ffff);
 
     // Iterate over each quad.
@@ -787,7 +811,7 @@ void ShapesApp::BuildWavesGeometry()
     }
 
     UINT vbByteSize = mWaves->VertexCount() * sizeof(Vertex);
-    UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+    UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint32_t);
 
     auto geo = std::make_unique<MeshGeometry>();
     geo->Name = "waterGeo";
@@ -804,7 +828,7 @@ void ShapesApp::BuildWavesGeometry()
 
     geo->VertexByteStride = sizeof(Vertex);
     geo->VertexBufferByteSize = vbByteSize;
-    geo->IndexFormat = DXGI_FORMAT_R16_UINT;
+    geo->IndexFormat = DXGI_FORMAT_R32_UINT;
     geo->IndexBufferByteSize = ibByteSize;
 
     SubmeshGeometry submesh;
@@ -812,7 +836,7 @@ void ShapesApp::BuildWavesGeometry()
     submesh.StartIndexLocation = 0;
     submesh.BaseVertexLocation = 0;
 
-    geo->DrawArgs["grid"] = submesh;
+    geo->DrawArgs["water"] = submesh;
 
     mGeometries["waterGeo"] = std::move(geo);
 }
@@ -1080,6 +1104,62 @@ void ShapesApp::BuildPSOs()
     opaquePsoDesc.SampleDesc.Quality = m4xMsaaState ? (m4xMsaaQuality - 1) : 0;
     opaquePsoDesc.DSVFormat = mDepthStencilFormat;
     ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&opaquePsoDesc, IID_PPV_ARGS(&mPSOs["opaque"])));
+
+    // step1:
+    // PSO for transparent objects
+    //
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC transparentPsoDesc = opaquePsoDesc;
+
+    D3D12_RENDER_TARGET_BLEND_DESC transparencyBlendDesc;
+    transparencyBlendDesc.BlendEnable = true;
+    transparencyBlendDesc.LogicOpEnable = false;
+
+    //suppose that we want to blend the source and destination pixels based on the opacity of the source pixel :
+    //source blend factor : D3D12_BLEND_SRC_ALPHA
+    //destination blend factor : D3D12_BLEND_INV_SRC_ALPHA
+    //blend operator : D3D12_BLEND_OP_ADD
+
+
+    transparencyBlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
+    transparencyBlendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
+
+    //you could  specify the blend factor or not..
+    //F = (r, g, b) and F = a, where the color (r, g, b,a) is supplied to the  parameter of the ID3D12GraphicsCommandList::OMSetBlendFactor method.
+    //transparencyBlendDesc.SrcBlend = D3D12_BLEND_BLEND_FACTOR;
+    //transparencyBlendDesc.DestBlend = D3D12_BLEND_INV_BLEND_FACTOR;
+
+    //Hooman: try different blend operators to see the blending effects
+    //D3D12_BLEND_OP_ADD,
+    //D3D12_BLEND_OP_SUBTRACT,
+    //D3D12_BLEND_OP_REV_SUBTRACT,
+    //D3D12_BLEND_OP_MIN,
+    //D3D12_BLEND_OP_MAX
+
+    transparencyBlendDesc.BlendOp = D3D12_BLEND_OP_ADD,
+
+        transparencyBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+    transparencyBlendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
+    transparencyBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
+    transparencyBlendDesc.LogicOp = D3D12_LOGIC_OP_NOOP;
+    transparencyBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
+    //transparencyBlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_BLUE;
+    //Direct3D supports rendering to up to eight render targets simultaneously.
+    transparentPsoDesc.BlendState.RenderTarget[0] = transparencyBlendDesc;
+    ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&transparentPsoDesc, IID_PPV_ARGS(&mPSOs["transparent"])));
+
+    //
+    // PSO for alpha tested objects
+    //
+
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC alphaTestedPsoDesc = opaquePsoDesc;
+    alphaTestedPsoDesc.PS =
+    {
+        reinterpret_cast<BYTE*>(mShaders["alphaTestedPS"]->GetBufferPointer()),
+        mShaders["alphaTestedPS"]->GetBufferSize()
+    };
+    alphaTestedPsoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_NONE;
+    ThrowIfFailed(md3dDevice->CreateGraphicsPipelineState(&alphaTestedPsoDesc, IID_PPV_ARGS(&mPSOs["alphaTested"])));
 }
 
 void ShapesApp::BuildFrameResources()
@@ -1087,7 +1167,7 @@ void ShapesApp::BuildFrameResources()
     for (int i = 0; i < gNumFrameResources; ++i)
     {
         mFrameResources.push_back(std::make_unique<FrameResource>(md3dDevice.Get(),
-            1, (UINT)mAllRitems.size(), (UINT)mMaterials.size()));
+            1, (UINT)mAllRitems.size(), (UINT)mMaterials.size(), mWaves->VertexCount()));
     }
 }
 
@@ -1139,7 +1219,7 @@ void ShapesApp::BuildMaterials()
     water->Name = "water";
     water->MatCBIndex = Index;
     water->DiffuseSrvHeapIndex = Index;
-    water->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    water->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 0.5f);
     water->FresnelR0 = XMFLOAT3(0.2f, 0.2f, 0.2f);
     water->Roughness = 0.0f;
 
@@ -1190,21 +1270,23 @@ void ShapesApp::BuildRenderItems()
 
     UINT Index = 0;
 
-    //auto wavesRitem = std::make_unique<RenderItem>();
+    auto wavesRitem = std::make_unique<RenderItem>();
     //wavesRitem->World = MathHelper::Identity4x4();
-    //XMStoreFloat4x4(&wavesRitem->TexTransform, XMMatrixScaling(5.0f, 5.0f, 1.0f));
-    //wavesRitem->ObjCBIndex = Index++;
-    //wavesRitem->Mat = mMaterials["water"].get();
-    //wavesRitem->Geo = mGeometries["waterGeo"].get();
-    //wavesRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-    //wavesRitem->IndexCount = wavesRitem->Geo->DrawArgs["grid"].IndexCount;
-    //wavesRitem->StartIndexLocation = wavesRitem->Geo->DrawArgs["grid"].StartIndexLocation;
-    //wavesRitem->BaseVertexLocation = wavesRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
+    XMStoreFloat4x4(&wavesRitem->World, XMMatrixScaling(0.2f, 0.2f, 0.2f));
+    XMStoreFloat4x4(&wavesRitem->TexTransform, XMMatrixScaling(1.f, 1.f, 1.f));
+    wavesRitem->ObjCBIndex = Index++;
+    wavesRitem->Mat = mMaterials["water"].get();
+    wavesRitem->Geo = mGeometries["waterGeo"].get();
+    wavesRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    wavesRitem->IndexCount = wavesRitem->Geo->DrawArgs["water"].IndexCount;
+    wavesRitem->StartIndexLocation = wavesRitem->Geo->DrawArgs["water"].StartIndexLocation;
+    wavesRitem->BaseVertexLocation = wavesRitem->Geo->DrawArgs["water"].BaseVertexLocation;
 
     //// we use mVavesRitem in updatewaves() to set the dynamic VB of the wave renderitem to the current frame VB.
-    //mWavesRitem = wavesRitem.get();
+    mWavesRitem = wavesRitem.get();
 
-    //mRitemLayer[(int)RenderLayer::Opaque].push_back(wavesRitem.get());
+    mRitemLayer[(int)RenderLayer::Transparent].push_back(wavesRitem.get());
+    mAllRitems.push_back(std::move(wavesRitem));
 
     // front box
     auto boxRItem = std::make_unique<RenderItem>();
@@ -1519,9 +1601,9 @@ void ShapesApp::BuildRenderItems()
     mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
     mAllRitems.push_back(std::move(gridRitem));
 
-    //// All the render items are opaque.
-    //for (auto& e : mAllRitems)
-    //    mOpaqueRitems.push_back(e.get());
+    // All the render items are opaque.
+    /*for (auto& e : mAllRitems)
+        mOpaqueRitems.push_back(e.get());*/
 }
 
 void ShapesApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
