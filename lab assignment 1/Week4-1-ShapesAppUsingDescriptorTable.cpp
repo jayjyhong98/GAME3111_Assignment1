@@ -479,6 +479,14 @@ void ShapesApp::LoadTextures()
         mCommandList.Get(), bricksTex->Filename.c_str(),
         bricksTex->Resource, bricksTex->UploadHeap));
 
+    // Roof texture for the wedges
+    auto roofTex = std::make_unique<Texture>();
+    roofTex->Name = "roofTex";
+    roofTex->Filename = L"../Textures/rooftile.dds";
+    ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+        mCommandList.Get(), roofTex->Filename.c_str(),
+        roofTex->Resource, roofTex->UploadHeap));
+
     // Texture for lantern
     auto lanternTex = std::make_unique<Texture>();
     lanternTex->Name = "lanternTex";
@@ -496,6 +504,7 @@ void ShapesApp::LoadTextures()
         tileTex->Resource, tileTex->UploadHeap));
 
     mTextures[bricksTex->Name] = std::move(bricksTex);
+    mTextures[roofTex->Name] = std::move(roofTex);
     mTextures[lanternTex->Name] = std::move(lanternTex);
     mTextures[tileTex->Name] = std::move(tileTex);
 }
@@ -549,7 +558,7 @@ void ShapesApp::BuildDescriptorHeaps()
     // Create the SRV heap.
     //
     D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-    srvHeapDesc.NumDescriptors = 3;
+    srvHeapDesc.NumDescriptors = 4;
     srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -560,7 +569,8 @@ void ShapesApp::BuildDescriptorHeaps()
     CD3DX12_CPU_DESCRIPTOR_HANDLE hDescriptor(mSrvDescriptorHeap->GetCPUDescriptorHandleForHeapStart());
 
     auto bricksTex = mTextures["bricksTex"]->Resource;
-    auto stoneTex = mTextures["lanternTex"]->Resource;
+    auto roofTex = mTextures["roofTex"]->Resource;
+    auto lanternTex = mTextures["lanternTex"]->Resource;
     auto tileTex = mTextures["tileTex"]->Resource;
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -575,9 +585,16 @@ void ShapesApp::BuildDescriptorHeaps()
     // next descriptor
     hDescriptor.Offset(1, mCbvSrvDescriptorSize);
 
-    srvDesc.Format = stoneTex->GetDesc().Format;
-    srvDesc.Texture2D.MipLevels = stoneTex->GetDesc().MipLevels;
-    md3dDevice->CreateShaderResourceView(stoneTex.Get(), &srvDesc, hDescriptor);
+    srvDesc.Format = roofTex->GetDesc().Format;
+    srvDesc.Texture2D.MipLevels = roofTex->GetDesc().MipLevels;
+    md3dDevice->CreateShaderResourceView(roofTex.Get(), &srvDesc, hDescriptor);
+
+    // next descriptor
+    hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+
+    srvDesc.Format = lanternTex->GetDesc().Format;
+    srvDesc.Texture2D.MipLevels = lanternTex->GetDesc().MipLevels;
+    md3dDevice->CreateShaderResourceView(lanternTex.Get(), &srvDesc, hDescriptor);
 
     // next descriptor
     hDescriptor.Offset(1, mCbvSrvDescriptorSize);
@@ -828,6 +845,12 @@ void ShapesApp::BuildShapeGeometry()
     geo->DrawArgs["grid"] = gridSubmesh;
     geo->DrawArgs["sphere"] = sphereSubmesh;
     geo->DrawArgs["cylinder"] = cylinderSubmesh;
+    geo->DrawArgs["cone"] = coneSubmesh;
+    geo->DrawArgs["wedge"] = wedgeSubmesh;
+    geo->DrawArgs["pyramid"] = pyramidSubmesh;
+    geo->DrawArgs["diamond"] = diamondSubmesh;
+    geo->DrawArgs["triangularprism"] = triangularprismSubmesh;
+    geo->DrawArgs["pentagonalprismprism"] = pentagonalprismSubmesh;
 
     mGeometries[geo->Name] = std::move(geo);
 }
@@ -884,6 +907,14 @@ void ShapesApp::BuildMaterials()
     bricks0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
     bricks0->Roughness = 0.1f;
 
+    auto roof0 = std::make_unique<Material>();
+    roof0->Name = "roof0";
+    roof0->MatCBIndex = 0;
+    roof0->DiffuseSrvHeapIndex = 0;
+    roof0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    roof0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
+    roof0->Roughness = 0.1f;
+
     auto lantern0 = std::make_unique<Material>();
     lantern0->Name = "lantern0";
     lantern0->MatCBIndex = 1;
@@ -901,6 +932,7 @@ void ShapesApp::BuildMaterials()
     tile0->Roughness = 0.3f;
 
     mMaterials["bricks0"] = std::move(bricks0);
+    mMaterials["roof0"] = std::move(roof0);
     mMaterials["lantern0"] = std::move(lantern0);
     mMaterials["tile0"] = std::move(tile0);
 }
@@ -970,7 +1002,7 @@ void ShapesApp::BuildRenderItems()
 
         XMStoreFloat4x4(&wedgeRitem->World, frontWedgeWorld);
         wedgeRitem->ObjCBIndex = Index++;
-        wedgeRitem->Mat = mMaterials["lantern0"].get();
+        wedgeRitem->Mat = mMaterials["roof0"].get();
         wedgeRitem->Geo = mGeometries["shapeGeo"].get();
         wedgeRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         wedgeRitem->IndexCount = wedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
@@ -981,7 +1013,7 @@ void ShapesApp::BuildRenderItems()
         wedgeRitem = std::make_unique<RenderItem>();
         XMStoreFloat4x4(&wedgeRitem->World, backWedgeWorld);
         wedgeRitem->ObjCBIndex = Index++;
-        wedgeRitem->Mat = mMaterials["lantern0"].get();
+        wedgeRitem->Mat = mMaterials["roof0"].get();
         wedgeRitem->Geo = mGeometries["shapeGeo"].get();
         wedgeRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         wedgeRitem->IndexCount = wedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
@@ -995,7 +1027,7 @@ void ShapesApp::BuildRenderItems()
         wedgeRitem = std::make_unique<RenderItem>();
         XMStoreFloat4x4(&wedgeRitem->World, leftWedgeWorld);
         wedgeRitem->ObjCBIndex = Index++;
-        wedgeRitem->Mat = mMaterials["lantern0"].get();
+        wedgeRitem->Mat = mMaterials["roof0"].get();
         wedgeRitem->Geo = mGeometries["shapeGeo"].get();
         wedgeRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         wedgeRitem->IndexCount = wedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
@@ -1006,7 +1038,7 @@ void ShapesApp::BuildRenderItems()
         wedgeRitem = std::make_unique<RenderItem>();
         XMStoreFloat4x4(&wedgeRitem->World, rightWedgeWorld);
         wedgeRitem->ObjCBIndex = Index++;
-        wedgeRitem->Mat = mMaterials["lantern0"].get();
+        wedgeRitem->Mat = mMaterials["roof0"].get();
         wedgeRitem->Geo = mGeometries["shapeGeo"].get();
         wedgeRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         wedgeRitem->IndexCount = wedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
@@ -1184,7 +1216,7 @@ void ShapesApp::BuildRenderItems()
             auto sphereRitem = std::make_unique<RenderItem>();
             XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(1.5f, 1.5f, 1.5f) * XMMatrixTranslation(15.0f * u, 31.0f, 20.0f + (4.0f * i)));
             sphereRitem->ObjCBIndex = Index++; // need to be changed
-            sphereRitem->Mat = mMaterials["lantern0"].get();
+            sphereRitem->Mat = mMaterials["roof0"].get();
             sphereRitem->Geo = mGeometries["shapeGeo"].get();
             sphereRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
             sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
