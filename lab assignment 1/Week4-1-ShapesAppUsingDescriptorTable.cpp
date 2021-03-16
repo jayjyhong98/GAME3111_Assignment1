@@ -16,7 +16,7 @@ using namespace DirectX::PackedVector;
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
 
-const int gNumFrameResources = 4;
+const int gNumFrameResources = 5;
 
 // Lightweight structure stores parameters to draw a shape.  This will
 // vary from app-to-app.
@@ -267,7 +267,10 @@ void ShapesApp::Draw(const GameTimer& gt)
         D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 
     // Clear the back buffer and depth buffer.
-    mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+    //step1: 
+    //mCommandList->ClearRenderTargetView(CurrentBackBufferView(), Colors::LightSteelBlue, 0, nullptr);
+    mCommandList->ClearRenderTargetView(CurrentBackBufferView(), (float*)&mMainPassCB.FogColor, 0, nullptr);
+
     mCommandList->ClearDepthStencilView(DepthStencilView(), D3D12_CLEAR_FLAG_DEPTH | D3D12_CLEAR_FLAG_STENCIL, 1.0f, 0, 0, nullptr);
 
     // Specify the buffers we are going to render to.
@@ -281,7 +284,7 @@ void ShapesApp::Draw(const GameTimer& gt)
     auto passCB = mCurrFrameResource->PassCB->Resource();
     mCommandList->SetGraphicsRootConstantBufferView(2, passCB->GetGPUVirtualAddress());
 
-    DrawRenderItems(mCommandList.Get(), mOpaqueRitems);
+    DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::Opaque]);
 
     // Indicate a state transition on the resource usage.
     mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -374,7 +377,26 @@ void ShapesApp::UpdateCamera(const GameTimer& gt)
 
 void ShapesApp::AnimateMaterials(const GameTimer& gt)
 {
+    // Scroll the water material texture coordinates.
+    auto waterMat = mMaterials["water"].get();
 
+    float& tu = waterMat->MatTransform(3, 0);
+    float& tv = waterMat->MatTransform(3, 1);
+
+    tu += 0.1f * gt.DeltaTime();
+    tv += 0.02f * gt.DeltaTime();
+
+    if (tu >= 1.0f)
+        tu -= 1.0f;
+
+    if (tv >= 1.0f)
+        tv -= 1.0f;
+
+    waterMat->MatTransform(3, 0) = tu;
+    waterMat->MatTransform(3, 1) = tv;
+
+    // Material has changed, so need to update cbuffer.
+    waterMat->NumFramesDirty = gNumFrameResources;
 }
 
 void ShapesApp::UpdateObjectCBs(const GameTimer& gt)
@@ -545,7 +567,7 @@ void ShapesApp::LoadTextures()
     // Texture for lantern
     auto lanternTex = std::make_unique<Texture>();
     lanternTex->Name = "lanternTex";
-    lanternTex->Filename = L"../Textures/stone.dds";
+    lanternTex->Filename = L"../Textures/lantern.dds";
     ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
         mCommandList.Get(), lanternTex->Filename.c_str(),
         lanternTex->Resource, lanternTex->UploadHeap));
@@ -678,13 +700,13 @@ void ShapesApp::BuildShadersAndInputLayout()
 {
     const D3D_SHADER_MACRO alphaTestDefines[] =
     {
-        "ALPHA_TEST", "1",
+        "FOG", "1",
         NULL, NULL
     };
 
     mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "VS", "vs_5_0");
     mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "PS", "ps_5_0");
-    mShaders["alphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", alphaTestDefines, "PS", "ps_5_1");
+    //mShaders["alphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", alphaTestDefines, "PS", "ps_5_1");
 
     mInputLayout =
     {
@@ -1026,42 +1048,52 @@ void ShapesApp::BuildFrameResources()
 
 void ShapesApp::BuildMaterials()
 {
+    int Index = 0;
+
     auto bricks0 = std::make_unique<Material>();
     bricks0->Name = "bricks0";
-    bricks0->MatCBIndex = 0;
-    bricks0->DiffuseSrvHeapIndex = 0;
+    bricks0->MatCBIndex = Index;
+    bricks0->DiffuseSrvHeapIndex = Index;
     bricks0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     bricks0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
     bricks0->Roughness = 0.1f;
 
+    Index++;
+
     auto roof0 = std::make_unique<Material>();
     roof0->Name = "roof0";
-    roof0->MatCBIndex = 1;
-    roof0->DiffuseSrvHeapIndex = 1;
+    roof0->MatCBIndex = Index;
+    roof0->DiffuseSrvHeapIndex = Index;
     roof0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     roof0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
     roof0->Roughness = 0.1f;
 
+    Index++;
+
     auto lantern0 = std::make_unique<Material>();
     lantern0->Name = "lantern0";
-    lantern0->MatCBIndex = 2;
-    lantern0->DiffuseSrvHeapIndex = 2;
+    lantern0->MatCBIndex = Index;
+    lantern0->DiffuseSrvHeapIndex = Index;
     lantern0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     lantern0->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
     lantern0->Roughness = 0.3f;
 
+    Index++;
+
     auto tile0 = std::make_unique<Material>();
     tile0->Name = "tile0";
-    tile0->MatCBIndex = 3;
-    tile0->DiffuseSrvHeapIndex = 3;
+    tile0->MatCBIndex = Index;
+    tile0->DiffuseSrvHeapIndex = Index;
     tile0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     tile0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
     tile0->Roughness = 0.3f;
 
+    Index++;
+
     auto water = std::make_unique<Material>();
     water->Name = "water";
-    water->MatCBIndex = 4;
-    water->DiffuseSrvHeapIndex = 4;
+    water->MatCBIndex = Index;
+    water->DiffuseSrvHeapIndex = Index;
     water->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     water->FresnelR0 = XMFLOAT3(0.2f, 0.2f, 0.2f);
     water->Roughness = 0.0f;
@@ -1083,7 +1115,7 @@ void ShapesApp::BuildRenderItems()
     //auto wavesRitem = std::make_unique<RenderItem>();
     //wavesRitem->World = MathHelper::Identity4x4();
     //XMStoreFloat4x4(&wavesRitem->TexTransform, XMMatrixScaling(5.0f, 5.0f, 1.0f));
-    //wavesRitem->ObjCBIndex = 0;
+    //wavesRitem->ObjCBIndex = Index++;
     //wavesRitem->Mat = mMaterials["water"].get();
     //wavesRitem->Geo = mGeometries["waterGeo"].get();
     //wavesRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -1091,7 +1123,7 @@ void ShapesApp::BuildRenderItems()
     //wavesRitem->StartIndexLocation = wavesRitem->Geo->DrawArgs["grid"].StartIndexLocation;
     //wavesRitem->BaseVertexLocation = wavesRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
 
-    ////// we use mVavesRitem in updatewaves() to set the dynamic VB of the wave renderitem to the current frame VB.
+    //// we use mVavesRitem in updatewaves() to set the dynamic VB of the wave renderitem to the current frame VB.
     //mWavesRitem = wavesRitem.get();
 
     //mRitemLayer[(int)RenderLayer::Opaque].push_back(wavesRitem.get());
@@ -1106,6 +1138,7 @@ void ShapesApp::BuildRenderItems()
     boxRItem->IndexCount = boxRItem->Geo->DrawArgs["box"].IndexCount;
     boxRItem->StartIndexLocation = boxRItem->Geo->DrawArgs["box"].StartIndexLocation;
     boxRItem->BaseVertexLocation = boxRItem->Geo->DrawArgs["box"].BaseVertexLocation;
+    mRitemLayer[(int)RenderLayer::Opaque].push_back(boxRItem.get());
     mAllRitems.push_back(std::move(boxRItem));
 
     // front pyramid on front box
@@ -1118,6 +1151,7 @@ void ShapesApp::BuildRenderItems()
     pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
     pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
     pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
+    mRitemLayer[(int)RenderLayer::Opaque].push_back(pyramidRitem.get());
     mAllRitems.push_back(std::move(pyramidRitem));
 
     auto pentagonalprismRitem = std::make_unique<RenderItem>();
@@ -1129,6 +1163,7 @@ void ShapesApp::BuildRenderItems()
     pentagonalprismRitem->IndexCount = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].IndexCount;
     pentagonalprismRitem->StartIndexLocation = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].StartIndexLocation;
     pentagonalprismRitem->BaseVertexLocation = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].BaseVertexLocation;
+    mRitemLayer[(int)RenderLayer::Opaque].push_back(pentagonalprismRitem.get());
     mAllRitems.push_back(std::move(pentagonalprismRitem));
 
     // tower with wedges and hexagon window
@@ -1145,6 +1180,7 @@ void ShapesApp::BuildRenderItems()
         boxRItem->IndexCount = boxRItem->Geo->DrawArgs["box"].IndexCount;
         boxRItem->StartIndexLocation = boxRItem->Geo->DrawArgs["box"].StartIndexLocation;
         boxRItem->BaseVertexLocation = boxRItem->Geo->DrawArgs["box"].BaseVertexLocation;
+        mRitemLayer[(int)RenderLayer::Opaque].push_back(boxRItem.get());
         mAllRitems.push_back(std::move(boxRItem));
 
         auto wedgeRitem = std::make_unique<RenderItem>();
@@ -1160,6 +1196,7 @@ void ShapesApp::BuildRenderItems()
         wedgeRitem->IndexCount = wedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
         wedgeRitem->StartIndexLocation = wedgeRitem->Geo->DrawArgs["wedge"].StartIndexLocation;
         wedgeRitem->BaseVertexLocation = wedgeRitem->Geo->DrawArgs["wedge"].BaseVertexLocation;
+        mRitemLayer[(int)RenderLayer::Opaque].push_back(wedgeRitem.get());
         mAllRitems.push_back(std::move(wedgeRitem));
 
         wedgeRitem = std::make_unique<RenderItem>();
@@ -1171,6 +1208,7 @@ void ShapesApp::BuildRenderItems()
         wedgeRitem->IndexCount = wedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
         wedgeRitem->StartIndexLocation = wedgeRitem->Geo->DrawArgs["wedge"].StartIndexLocation;
         wedgeRitem->BaseVertexLocation = wedgeRitem->Geo->DrawArgs["wedge"].BaseVertexLocation;
+        mRitemLayer[(int)RenderLayer::Opaque].push_back(wedgeRitem.get());
         mAllRitems.push_back(std::move(wedgeRitem));
 
         XMMATRIX leftWedgeWorld = XMMatrixScaling(3.0f, 2.0f, sizeZ - (5.0 * i)) * XMMatrixTranslation((-sizeZ / 2) - 1.5 + (2.5 * i), 10.0f + (8.0 * i), 25.0f);
@@ -1185,6 +1223,7 @@ void ShapesApp::BuildRenderItems()
         wedgeRitem->IndexCount = wedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
         wedgeRitem->StartIndexLocation = wedgeRitem->Geo->DrawArgs["wedge"].StartIndexLocation;
         wedgeRitem->BaseVertexLocation = wedgeRitem->Geo->DrawArgs["wedge"].BaseVertexLocation;
+        mRitemLayer[(int)RenderLayer::Opaque].push_back(wedgeRitem.get());
         mAllRitems.push_back(std::move(wedgeRitem));
 
         wedgeRitem = std::make_unique<RenderItem>();
@@ -1196,6 +1235,7 @@ void ShapesApp::BuildRenderItems()
         wedgeRitem->IndexCount = wedgeRitem->Geo->DrawArgs["wedge"].IndexCount;
         wedgeRitem->StartIndexLocation = wedgeRitem->Geo->DrawArgs["wedge"].StartIndexLocation;
         wedgeRitem->BaseVertexLocation = wedgeRitem->Geo->DrawArgs["wedge"].BaseVertexLocation;
+        mRitemLayer[(int)RenderLayer::Opaque].push_back(wedgeRitem.get());
         mAllRitems.push_back(std::move(wedgeRitem));
 
         // continue using prism from earlier
@@ -1212,6 +1252,7 @@ void ShapesApp::BuildRenderItems()
             pentagonalprismRitem->IndexCount = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].IndexCount;
             pentagonalprismRitem->StartIndexLocation = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].StartIndexLocation;
             pentagonalprismRitem->BaseVertexLocation = pentagonalprismRitem->Geo->DrawArgs["pentagonalprism"].BaseVertexLocation;
+            mRitemLayer[(int)RenderLayer::Opaque].push_back(pentagonalprismRitem.get());
             mAllRitems.push_back(std::move(pentagonalprismRitem));
         }
     }
@@ -1231,6 +1272,7 @@ void ShapesApp::BuildRenderItems()
             coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
             coneRitem->StartIndexLocation = coneRitem->Geo->DrawArgs["cone"].StartIndexLocation;
             coneRitem->BaseVertexLocation = coneRitem->Geo->DrawArgs["cone"].BaseVertexLocation;
+            mRitemLayer[(int)RenderLayer::Opaque].push_back(coneRitem.get());
             mAllRitems.push_back(std::move(coneRitem));
 
             auto cylinderRitem = std::make_unique<RenderItem>();
@@ -1242,6 +1284,7 @@ void ShapesApp::BuildRenderItems()
             cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
             cylinderRitem->StartIndexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].StartIndexLocation;
             cylinderRitem->BaseVertexLocation = cylinderRitem->Geo->DrawArgs["cylinder"].BaseVertexLocation;
+            mRitemLayer[(int)RenderLayer::Opaque].push_back(cylinderRitem.get());
             mAllRitems.push_back(std::move(cylinderRitem));
         }
     }
@@ -1283,6 +1326,7 @@ void ShapesApp::BuildRenderItems()
         pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
         pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
         pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
+        mRitemLayer[(int)RenderLayer::Opaque].push_back(pyramidRitem.get());
         mAllRitems.push_back(std::move(pyramidRitem));
     }
 
@@ -1301,6 +1345,7 @@ void ShapesApp::BuildRenderItems()
             pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
             pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
             pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
+            mRitemLayer[(int)RenderLayer::Opaque].push_back(pyramidRitem.get());
             mAllRitems.push_back(std::move(pyramidRitem));
         }
     }
@@ -1316,6 +1361,7 @@ void ShapesApp::BuildRenderItems()
     pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
     pyramidRitem->StartIndexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].StartIndexLocation;
     pyramidRitem->BaseVertexLocation = pyramidRitem->Geo->DrawArgs["pyramid"].BaseVertexLocation;
+    mRitemLayer[(int)RenderLayer::Opaque].push_back(pyramidRitem.get());
     mAllRitems.push_back(std::move(pyramidRitem));
 
     // top triangle prism
@@ -1328,6 +1374,7 @@ void ShapesApp::BuildRenderItems()
     triangularprismRitem->IndexCount = triangularprismRitem->Geo->DrawArgs["triangularprism"].IndexCount;
     triangularprismRitem->StartIndexLocation = triangularprismRitem->Geo->DrawArgs["triangularprism"].StartIndexLocation;
     triangularprismRitem->BaseVertexLocation = triangularprismRitem->Geo->DrawArgs["triangularprism"].BaseVertexLocation;
+    mRitemLayer[(int)RenderLayer::Opaque].push_back(triangularprismRitem.get());
     mAllRitems.push_back(std::move(triangularprismRitem));
 
     // lower diamond lanterns
@@ -1342,6 +1389,7 @@ void ShapesApp::BuildRenderItems()
         diamondRitem->IndexCount = diamondRitem->Geo->DrawArgs["diamond"].IndexCount;
         diamondRitem->StartIndexLocation = diamondRitem->Geo->DrawArgs["diamond"].StartIndexLocation;
         diamondRitem->BaseVertexLocation = diamondRitem->Geo->DrawArgs["diamond"].BaseVertexLocation;
+        mRitemLayer[(int)RenderLayer::Opaque].push_back(diamondRitem.get());
         mAllRitems.push_back(std::move(diamondRitem));
     }
 
@@ -1357,6 +1405,7 @@ void ShapesApp::BuildRenderItems()
         diamondRitem->IndexCount = diamondRitem->Geo->DrawArgs["diamond"].IndexCount;
         diamondRitem->StartIndexLocation = diamondRitem->Geo->DrawArgs["diamond"].StartIndexLocation;
         diamondRitem->BaseVertexLocation = diamondRitem->Geo->DrawArgs["diamond"].BaseVertexLocation;
+        mRitemLayer[(int)RenderLayer::Opaque].push_back(diamondRitem.get());
         mAllRitems.push_back(std::move(diamondRitem));
     }
 
@@ -1374,6 +1423,7 @@ void ShapesApp::BuildRenderItems()
             sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
             sphereRitem->StartIndexLocation = sphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
             sphereRitem->BaseVertexLocation = sphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+            mRitemLayer[(int)RenderLayer::Opaque].push_back(sphereRitem.get());
             mAllRitems.push_back(std::move(sphereRitem));
         }
     }
@@ -1388,11 +1438,12 @@ void ShapesApp::BuildRenderItems()
     gridRitem->IndexCount = gridRitem->Geo->DrawArgs["grid"].IndexCount;
     gridRitem->StartIndexLocation = gridRitem->Geo->DrawArgs["grid"].StartIndexLocation;
     gridRitem->BaseVertexLocation = gridRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
+    mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
     mAllRitems.push_back(std::move(gridRitem));
 
-    // All the render items are opaque.
-    for (auto& e : mAllRitems)
-        mOpaqueRitems.push_back(e.get());
+    //// All the render items are opaque.
+    //for (auto& e : mAllRitems)
+    //    mOpaqueRitems.push_back(e.get());
 }
 
 void ShapesApp::DrawRenderItems(ID3D12GraphicsCommandList* cmdList, const std::vector<RenderItem*>& ritems)
