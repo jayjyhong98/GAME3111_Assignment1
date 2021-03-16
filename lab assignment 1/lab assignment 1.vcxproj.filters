@@ -48,6 +48,9 @@
     <ClCompile Include="Week4-1-ShapesAppUsingDescriptorTable.cpp">
       <Filter>Shape</Filter>
     </ClCompile>
+    <ClCompile Include="Waves.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\PS.hlsl">
@@ -87,6 +90,9 @@
     </ClInclude>
     <ClInclude Include="FrameResource.h">
       <Filter>Shape</Filter>
+    </ClInclude>
+    <ClInclude Include="Waves.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

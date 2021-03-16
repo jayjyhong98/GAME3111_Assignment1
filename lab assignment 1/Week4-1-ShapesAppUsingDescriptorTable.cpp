@@ -7,6 +7,7 @@
 #include "../Common/UploadBuffer.h"
 #include "../Common/GeometryGenerator.h"
 #include "FrameResource.h"
+#include "Waves.h"
 
 using Microsoft::WRL::ComPtr;
 using namespace DirectX;
@@ -52,6 +53,12 @@ struct RenderItem
     int BaseVertexLocation = 0;
 };
 
+enum class RenderLayer : int
+{
+    Opaque = 0,
+    Count
+};
+
 class ShapesApp : public D3DApp
 {
 public:
@@ -77,13 +84,15 @@ private:
     void UpdateObjectCBs(const GameTimer& gt);
     void UpdateMaterialCBs(const GameTimer& gt);
     void UpdateMainPassCB(const GameTimer& gt);
+    void UpdateWaves(const GameTimer& gt);
 
-    void LoadTextures(); //
-    void BuildRootSignature(); //
-    void BuildDescriptorHeaps(); //
-    void BuildShadersAndInputLayout(); //
-    void BuildShapeGeometry(); //
-    void BuildPSOs(); //
+    void LoadTextures(); 
+    void BuildRootSignature(); 
+    void BuildDescriptorHeaps(); 
+    void BuildShadersAndInputLayout(); 
+    void BuildWavesGeometry();
+    void BuildShapeGeometry(); 
+    void BuildPSOs();
     void BuildFrameResources();
     void BuildMaterials();
     void BuildRenderItems();
@@ -111,8 +120,14 @@ private:
 
     std::vector<D3D12_INPUT_ELEMENT_DESC> mInputLayout;
 
+    RenderItem* mWavesRitem = nullptr;
+
     // List of all the render items.
     std::vector<std::unique_ptr<RenderItem>> mAllRitems;
+
+    std::vector<RenderItem*> mRitemLayer[(int)RenderLayer::Count];
+
+    std::unique_ptr<Waves> mWaves;
 
     // Render items divided by PSO.
     std::vector<RenderItem*> mOpaqueRitems;
@@ -469,6 +484,46 @@ void ShapesApp::UpdateMainPassCB(const GameTimer& gt)
     currPassCB->CopyData(0, mMainPassCB);
 }
 
+void ShapesApp::UpdateWaves(const GameTimer& gt)
+{
+    // Every quarter second, generate a random wave.
+    static float t_base = 0.0f;
+    if ((mTimer.TotalTime() - t_base) >= 0.25f)
+    {
+        t_base += 0.25f;
+
+        int i = MathHelper::Rand(4, mWaves->RowCount() - 5);
+        int j = MathHelper::Rand(4, mWaves->ColumnCount() - 5);
+
+        float r = MathHelper::RandF(0.2f, 0.5f);
+
+        mWaves->Disturb(i, j, r);
+    }
+
+    // Update the wave simulation.
+    mWaves->Update(gt.DeltaTime());
+
+    // Update the wave vertex buffer with the new solution.
+    auto currWavesVB = mCurrFrameResource->WavesVB.get();
+    for (int i = 0; i < mWaves->VertexCount(); ++i)
+    {
+        Vertex v;
+
+        v.Pos = mWaves->Position(i);
+        v.Normal = mWaves->Normal(i);
+
+        // Derive tex-coords from position by 
+        // mapping [-w/2,w/2] --> [0,1]
+        v.TexC.x = 0.5f + v.Pos.x / mWaves->Width();
+        v.TexC.y = 0.5f - v.Pos.z / mWaves->Depth();
+
+        currWavesVB->CopyData(i, v);
+    }
+
+    // Set the dynamic VB of the wave renderitem to the current frame VB.
+    mWavesRitem->Geo->VertexBufferGPU = currWavesVB->Resource();
+}
+
 void ShapesApp::LoadTextures()
 {
     // Brick texture for the walls
@@ -503,10 +558,18 @@ void ShapesApp::LoadTextures()
         mCommandList.Get(), tileTex->Filename.c_str(),
         tileTex->Resource, tileTex->UploadHeap));
 
+    auto waterTex = std::make_unique<Texture>();
+    waterTex->Name = "waterTex";
+    waterTex->Filename = L"../Textures/water1.dds";
+    ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+        mCommandList.Get(), waterTex->Filename.c_str(),
+        waterTex->Resource, waterTex->UploadHeap));
+
     mTextures[bricksTex->Name] = std::move(bricksTex);
     mTextures[roofTex->Name] = std::move(roofTex);
     mTextures[lanternTex->Name] = std::move(lanternTex);
     mTextures[tileTex->Name] = std::move(tileTex);
+    mTextures[waterTex->Name] = std::move(waterTex);
 }
 
 void ShapesApp::BuildRootSignature()
@@ -558,7 +621,7 @@ void ShapesApp::BuildDescriptorHeaps()
     // Create the SRV heap.
     //
     D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-    srvHeapDesc.NumDescriptors = 4; //  Change when adding more descripotrsaf
+    srvHeapDesc.NumDescriptors = 5; //  Change when adding more descripotrsaf
     srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -572,6 +635,7 @@ void ShapesApp::BuildDescriptorHeaps()
     auto roofTex = mTextures["roofTex"]->Resource;
     auto lanternTex = mTextures["lanternTex"]->Resource;
     auto tileTex = mTextures["tileTex"]->Resource;
+    auto waterTex = mTextures["waterTex"]->Resource;
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -602,6 +666,12 @@ void ShapesApp::BuildDescriptorHeaps()
     srvDesc.Format = tileTex->GetDesc().Format;
     srvDesc.Texture2D.MipLevels = tileTex->GetDesc().MipLevels;
     md3dDevice->CreateShaderResourceView(tileTex.Get(), &srvDesc, hDescriptor);
+
+    // next descriptor
+    hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+
+    srvDesc.Format = waterTex->GetDesc().Format;
+    md3dDevice->CreateShaderResourceView(waterTex.Get(), &srvDesc, hDescriptor);
 }
 
 void ShapesApp::BuildShadersAndInputLayout()
@@ -622,6 +692,62 @@ void ShapesApp::BuildShadersAndInputLayout()
         { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
         { "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
     };
+}
+
+void ShapesApp::BuildWavesGeometry()
+{
+    std::vector<std::uint16_t> indices(3 * mWaves->TriangleCount()); // 3 indices per face
+    assert(mWaves->VertexCount() < 0x0000ffff);
+
+    // Iterate over each quad.
+    int m = mWaves->RowCount();
+    int n = mWaves->ColumnCount();
+    int k = 0;
+    for (int i = 0; i < m - 1; ++i)
+    {
+        for (int j = 0; j < n - 1; ++j)
+        {
+            indices[k] = i * n + j;
+            indices[k + 1] = i * n + j + 1;
+            indices[k + 2] = (i + 1) * n + j;
+
+            indices[k + 3] = (i + 1) * n + j;
+            indices[k + 4] = i * n + j + 1;
+            indices[k + 5] = (i + 1) * n + j + 1;
+
+            k += 6; // next quad
+        }
+    }
+
+    UINT vbByteSize = mWaves->VertexCount() * sizeof(Vertex);
+    UINT ibByteSize = (UINT)indices.size() * sizeof(std::uint16_t);
+
+    auto geo = std::make_unique<MeshGeometry>();
+    geo->Name = "waterGeo";
+
+    // Set dynamically.
+    geo->VertexBufferCPU = nullptr;
+    geo->VertexBufferGPU = nullptr;
+
+    ThrowIfFailed(D3DCreateBlob(ibByteSize, &geo->IndexBufferCPU));
+    CopyMemory(geo->IndexBufferCPU->GetBufferPointer(), indices.data(), ibByteSize);
+
+    geo->IndexBufferGPU = d3dUtil::CreateDefaultBuffer(md3dDevice.Get(),
+        mCommandList.Get(), indices.data(), ibByteSize, geo->IndexBufferUploader);
+
+    geo->VertexByteStride = sizeof(Vertex);
+    geo->VertexBufferByteSize = vbByteSize;
+    geo->IndexFormat = DXGI_FORMAT_R16_UINT;
+    geo->IndexBufferByteSize = ibByteSize;
+
+    SubmeshGeometry submesh;
+    submesh.IndexCount = (UINT)indices.size();
+    submesh.StartIndexLocation = 0;
+    submesh.BaseVertexLocation = 0;
+
+    geo->DrawArgs["grid"] = submesh;
+
+    mGeometries["waterGeo"] = std::move(geo);
 }
 
 void ShapesApp::BuildShapeGeometry()
@@ -932,10 +1058,19 @@ void ShapesApp::BuildMaterials()
     tile0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
     tile0->Roughness = 0.3f;
 
+    auto water = std::make_unique<Material>();
+    water->Name = "water";
+    water->MatCBIndex = 4;
+    water->DiffuseSrvHeapIndex = 4;
+    water->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    water->FresnelR0 = XMFLOAT3(0.2f, 0.2f, 0.2f);
+    water->Roughness = 0.0f;
+
     mMaterials["bricks0"] = std::move(bricks0);
     mMaterials["roof0"] = std::move(roof0);
     mMaterials["lantern0"] = std::move(lantern0);
     mMaterials["tile0"] = std::move(tile0);
+    mMaterials["water"] = std::move(water);
 }
 
 void ShapesApp::BuildRenderItems()
@@ -944,6 +1079,22 @@ void ShapesApp::BuildRenderItems()
     // Rotation = RotX * RotY * RotZ;
 
     UINT Index = 0;
+
+    //auto wavesRitem = std::make_unique<RenderItem>();
+    //wavesRitem->World = MathHelper::Identity4x4();
+    //XMStoreFloat4x4(&wavesRitem->TexTransform, XMMatrixScaling(5.0f, 5.0f, 1.0f));
+    //wavesRitem->ObjCBIndex = 0;
+    //wavesRitem->Mat = mMaterials["water"].get();
+    //wavesRitem->Geo = mGeometries["waterGeo"].get();
+    //wavesRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    //wavesRitem->IndexCount = wavesRitem->Geo->DrawArgs["grid"].IndexCount;
+    //wavesRitem->StartIndexLocation = wavesRitem->Geo->DrawArgs["grid"].StartIndexLocation;
+    //wavesRitem->BaseVertexLocation = wavesRitem->Geo->DrawArgs["grid"].BaseVertexLocation;
+
+    ////// we use mVavesRitem in updatewaves() to set the dynamic VB of the wave renderitem to the current frame VB.
+    //mWavesRitem = wavesRitem.get();
+
+    //mRitemLayer[(int)RenderLayer::Opaque].push_back(wavesRitem.get());
 
     // front box
     auto boxRItem = std::make_unique<RenderItem>();
