@@ -587,11 +587,27 @@ void ShapesApp::LoadTextures()
         mCommandList.Get(), waterTex->Filename.c_str(),
         waterTex->Resource, waterTex->UploadHeap));
 
+    auto greenTex = std::make_unique<Texture>();
+    greenTex->Name = "greenTex";
+    greenTex->Filename = L"../Textures/grass.dds";
+    ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+        mCommandList.Get(), greenTex->Filename.c_str(),
+        greenTex->Resource, greenTex->UploadHeap));
+
+    auto woodTex = std::make_unique<Texture>();
+    woodTex->Name = "woodTex";
+    woodTex->Filename = L"../Textures/wood.dds";
+    ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
+        mCommandList.Get(), woodTex->Filename.c_str(),
+        woodTex->Resource, woodTex->UploadHeap));
+
     mTextures[bricksTex->Name] = std::move(bricksTex);
     mTextures[roofTex->Name] = std::move(roofTex);
     mTextures[lanternTex->Name] = std::move(lanternTex);
     mTextures[tileTex->Name] = std::move(tileTex);
     mTextures[waterTex->Name] = std::move(waterTex);
+    mTextures[greenTex->Name] = std::move(greenTex);
+    mTextures[woodTex->Name] = std::move(woodTex);
 }
 
 void ShapesApp::BuildRootSignature()
@@ -643,7 +659,7 @@ void ShapesApp::BuildDescriptorHeaps()
     // Create the SRV heap.
     //
     D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-    srvHeapDesc.NumDescriptors = 5; //  Change when adding more descripotrsaf
+    srvHeapDesc.NumDescriptors = 7; //  Change when adding more descripotrsaf
     srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -658,6 +674,8 @@ void ShapesApp::BuildDescriptorHeaps()
     auto lanternTex = mTextures["lanternTex"]->Resource;
     auto tileTex = mTextures["tileTex"]->Resource;
     auto waterTex = mTextures["waterTex"]->Resource;
+    auto greenTex = mTextures["greenTex"]->Resource;
+    auto woodTex = mTextures["woodTex"]->Resource;
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -694,6 +712,18 @@ void ShapesApp::BuildDescriptorHeaps()
 
     srvDesc.Format = waterTex->GetDesc().Format;
     md3dDevice->CreateShaderResourceView(waterTex.Get(), &srvDesc, hDescriptor);
+
+    // next descriptor
+    hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+
+    srvDesc.Format = greenTex->GetDesc().Format;
+    md3dDevice->CreateShaderResourceView(greenTex.Get(), &srvDesc, hDescriptor);
+
+    // next descriptor
+    hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+
+    srvDesc.Format = woodTex->GetDesc().Format;
+    md3dDevice->CreateShaderResourceView(woodTex.Get(), &srvDesc, hDescriptor);
 }
 
 void ShapesApp::BuildShadersAndInputLayout()
@@ -1098,11 +1128,33 @@ void ShapesApp::BuildMaterials()
     water->FresnelR0 = XMFLOAT3(0.2f, 0.2f, 0.2f);
     water->Roughness = 0.0f;
 
+    Index++;
+
+    auto green = std::make_unique<Material>();
+    green->Name = "green";
+    green->MatCBIndex = Index;
+    green->DiffuseSrvHeapIndex = Index;
+    green->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    green->FresnelR0 = XMFLOAT3(0.2f, 0.2f, 0.2f);
+    green->Roughness = 0.0f;
+
+    Index++;
+
+    auto wood = std::make_unique<Material>();
+    wood->Name = "wood";
+    wood->MatCBIndex = Index;
+    wood->DiffuseSrvHeapIndex = Index;
+    wood->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+    wood->FresnelR0 = XMFLOAT3(0.2f, 0.2f, 0.2f);
+    wood->Roughness = 0.0f;
+
     mMaterials["bricks0"] = std::move(bricks0);
     mMaterials["roof0"] = std::move(roof0);
     mMaterials["lantern0"] = std::move(lantern0);
     mMaterials["tile0"] = std::move(tile0);
     mMaterials["water"] = std::move(water);
+    mMaterials["green"] = std::move(green);
+    mMaterials["wood"] = std::move(wood);
 }
 
 void ShapesApp::BuildRenderItems()
@@ -1145,7 +1197,7 @@ void ShapesApp::BuildRenderItems()
     auto pyramidRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(16.0f, 5.0f, 16.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(0.0f, 10.5f, 0.0f));
     pyramidRitem->ObjCBIndex = Index++;
-    pyramidRitem->Mat = mMaterials["lantern0"].get();
+    pyramidRitem->Mat = mMaterials["roof0"].get();
     pyramidRitem->Geo = mGeometries["shapeGeo"].get();
     pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
@@ -1266,7 +1318,7 @@ void ShapesApp::BuildRenderItems()
             auto coneRitem = std::make_unique<RenderItem>();
             XMStoreFloat4x4(&coneRitem->World, XMMatrixScaling(3.0f, 10.0f, 3.0f) * XMMatrixTranslation(25.0f * u, 7.5f, 10.0f * i));
             coneRitem->ObjCBIndex = Index++;
-            coneRitem->Mat = mMaterials["lantern0"].get();
+            coneRitem->Mat = mMaterials["green"].get();
             coneRitem->Geo = mGeometries["shapeGeo"].get();
             coneRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
             coneRitem->IndexCount = coneRitem->Geo->DrawArgs["cone"].IndexCount;
@@ -1278,7 +1330,7 @@ void ShapesApp::BuildRenderItems()
             auto cylinderRitem = std::make_unique<RenderItem>();
             XMStoreFloat4x4(&cylinderRitem->World, XMMatrixScaling(1.0f, 3.0f, 1.0f) * XMMatrixTranslation(25.0f * u, 1.0f, 10.0f * i));
             cylinderRitem->ObjCBIndex = Index++;
-            cylinderRitem->Mat = mMaterials["lantern0"].get();
+            cylinderRitem->Mat = mMaterials["wood"].get();
             cylinderRitem->Geo = mGeometries["shapeGeo"].get();
             cylinderRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
             cylinderRitem->IndexCount = cylinderRitem->Geo->DrawArgs["cylinder"].IndexCount;
@@ -1294,7 +1346,7 @@ void ShapesApp::BuildRenderItems()
     auto triangularprismRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(20.0f, 5.0f, 10.0f) * XMMatrixRotationX(-1.57f) * XMMatrixTranslation(0.0f, 15.5f, 7.0f));
     triangularprismRitem->ObjCBIndex = Index++; // need to be changed
-    triangularprismRitem->Mat = mMaterials["lantern0"].get();
+    triangularprismRitem->Mat = mMaterials["roof0"].get();
     triangularprismRitem->Geo = mGeometries["shapeGeo"].get();
     triangularprismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     triangularprismRitem->IndexCount = triangularprismRitem->Geo->DrawArgs["triangularprism"].IndexCount;
@@ -1306,7 +1358,7 @@ void ShapesApp::BuildRenderItems()
     triangularprismRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(8.0f, 32.0f, 10.0f) * XMMatrixRotationX(-1.57f) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 23.0f, 40.0f));
     triangularprismRitem->ObjCBIndex = Index++; // need to be changed
-    triangularprismRitem->Mat = mMaterials["lantern0"].get();
+    triangularprismRitem->Mat = mMaterials["roof0"].get();
     triangularprismRitem->Geo = mGeometries["shapeGeo"].get();
     triangularprismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     triangularprismRitem->IndexCount = triangularprismRitem->Geo->DrawArgs["triangularprism"].IndexCount;
@@ -1320,7 +1372,7 @@ void ShapesApp::BuildRenderItems()
         pyramidRitem = std::make_unique<RenderItem>();
         XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(15.0f, 7.0f, 6.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(9.0f * i, 13.5f, 43.0f));
         pyramidRitem->ObjCBIndex = Index++;
-        pyramidRitem->Mat = mMaterials["lantern0"].get();
+        pyramidRitem->Mat = mMaterials["roof0"].get();
         pyramidRitem->Geo = mGeometries["shapeGeo"].get();
         pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
         pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
@@ -1339,7 +1391,7 @@ void ShapesApp::BuildRenderItems()
             pyramidRitem = std::make_unique<RenderItem>();
             XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(6.0f, 2.0f, 6.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(18.0f * u, 16.0f, 13.0f + (i * 8.0f)));
             pyramidRitem->ObjCBIndex = Index++;
-            pyramidRitem->Mat = mMaterials["lantern0"].get();
+            pyramidRitem->Mat = mMaterials["roof0"].get();
             pyramidRitem->Geo = mGeometries["shapeGeo"].get();
             pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
             pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
@@ -1355,7 +1407,7 @@ void ShapesApp::BuildRenderItems()
     pyramidRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(25.0f, 6.0f, 25.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(0.0f, 37.0f, 25.0f));
     pyramidRitem->ObjCBIndex = Index++;
-    pyramidRitem->Mat = mMaterials["lantern0"].get();
+    pyramidRitem->Mat = mMaterials["roof0"].get();
     pyramidRitem->Geo = mGeometries["shapeGeo"].get();
     pyramidRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     pyramidRitem->IndexCount = pyramidRitem->Geo->DrawArgs["pyramid"].IndexCount;
@@ -1368,7 +1420,7 @@ void ShapesApp::BuildRenderItems()
     triangularprismRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(10.0f, 25.0f, 8.0f) * XMMatrixRotationX(-1.57f) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 38.0f, 25.0f));
     triangularprismRitem->ObjCBIndex = Index++; // need to be changed
-    triangularprismRitem->Mat = mMaterials["lantern0"].get();
+    triangularprismRitem->Mat = mMaterials["roof0"].get();
     triangularprismRitem->Geo = mGeometries["shapeGeo"].get();
     triangularprismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
     triangularprismRitem->IndexCount = triangularprismRitem->Geo->DrawArgs["triangularprism"].IndexCount;
