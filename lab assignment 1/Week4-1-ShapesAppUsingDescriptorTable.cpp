@@ -15,7 +15,7 @@ using namespace DirectX::PackedVector;
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
 
-const int gNumFrameResources = 3;
+const int gNumFrameResources = 4;
 
 // Lightweight structure stores parameters to draw a shape.  This will
 // vary from app-to-app.
@@ -558,7 +558,7 @@ void ShapesApp::BuildDescriptorHeaps()
     // Create the SRV heap.
     //
     D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-    srvHeapDesc.NumDescriptors = 4;
+    srvHeapDesc.NumDescriptors = 4; //  Change when adding more descripotrsaf
     srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     ThrowIfFailed(md3dDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mSrvDescriptorHeap)));
@@ -614,6 +614,7 @@ void ShapesApp::BuildShadersAndInputLayout()
 
     mShaders["standardVS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "VS", "vs_5_0");
     mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", nullptr, "PS", "ps_5_0");
+    mShaders["alphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", alphaTestDefines, "PS", "ps_5_1");
 
     mInputLayout =
     {
@@ -909,24 +910,24 @@ void ShapesApp::BuildMaterials()
 
     auto roof0 = std::make_unique<Material>();
     roof0->Name = "roof0";
-    roof0->MatCBIndex = 0;
-    roof0->DiffuseSrvHeapIndex = 0;
+    roof0->MatCBIndex = 1;
+    roof0->DiffuseSrvHeapIndex = 1;
     roof0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     roof0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
     roof0->Roughness = 0.1f;
 
     auto lantern0 = std::make_unique<Material>();
     lantern0->Name = "lantern0";
-    lantern0->MatCBIndex = 1;
-    lantern0->DiffuseSrvHeapIndex = 1;
+    lantern0->MatCBIndex = 2;
+    lantern0->DiffuseSrvHeapIndex = 2;
     lantern0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     lantern0->FresnelR0 = XMFLOAT3(0.05f, 0.05f, 0.05f);
     lantern0->Roughness = 0.3f;
 
     auto tile0 = std::make_unique<Material>();
     tile0->Name = "tile0";
-    tile0->MatCBIndex = 2;
-    tile0->DiffuseSrvHeapIndex = 2;
+    tile0->MatCBIndex = 3;
+    tile0->DiffuseSrvHeapIndex = 3;
     tile0->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     tile0->FresnelR0 = XMFLOAT3(0.02f, 0.02f, 0.02f);
     tile0->Roughness = 0.3f;
@@ -1216,7 +1217,7 @@ void ShapesApp::BuildRenderItems()
             auto sphereRitem = std::make_unique<RenderItem>();
             XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(1.5f, 1.5f, 1.5f) * XMMatrixTranslation(15.0f * u, 31.0f, 20.0f + (4.0f * i)));
             sphereRitem->ObjCBIndex = Index++; // need to be changed
-            sphereRitem->Mat = mMaterials["roof0"].get();
+            sphereRitem->Mat = mMaterials["lantern0"].get();
             sphereRitem->Geo = mGeometries["shapeGeo"].get();
             sphereRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
             sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
