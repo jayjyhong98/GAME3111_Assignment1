@@ -1068,7 +1068,7 @@ void ShapesApp::BuildShapeGeometry()
     geo->DrawArgs["pyramid"] = pyramidSubmesh;
     geo->DrawArgs["diamond"] = diamondSubmesh;
     geo->DrawArgs["triangularprism"] = triangularprismSubmesh;
-    geo->DrawArgs["pentagonalprismprism"] = pentagonalprismSubmesh;
+    geo->DrawArgs["pentagonalprism"] = pentagonalprismSubmesh;
 
     mGeometries[geo->Name] = std::move(geo);
 }
@@ -1460,6 +1460,7 @@ void ShapesApp::BuildRenderItems()
     triangularprismRitem->IndexCount = triangularprismRitem->Geo->DrawArgs["triangularprism"].IndexCount;
     triangularprismRitem->StartIndexLocation = triangularprismRitem->Geo->DrawArgs["triangularprism"].StartIndexLocation;
     triangularprismRitem->BaseVertexLocation = triangularprismRitem->Geo->DrawArgs["triangularprism"].BaseVertexLocation;
+    mRitemLayer[(int)RenderLayer::Opaque].push_back(triangularprismRitem.get());
     mAllRitems.push_back(std::move(triangularprismRitem));
 
     // back triangular structure
@@ -1472,6 +1473,7 @@ void ShapesApp::BuildRenderItems()
     triangularprismRitem->IndexCount = triangularprismRitem->Geo->DrawArgs["triangularprism"].IndexCount;
     triangularprismRitem->StartIndexLocation = triangularprismRitem->Geo->DrawArgs["triangularprism"].StartIndexLocation;
     triangularprismRitem->BaseVertexLocation = triangularprismRitem->Geo->DrawArgs["triangularprism"].BaseVertexLocation;
+    mRitemLayer[(int)RenderLayer::Opaque].push_back(triangularprismRitem.get());
     mAllRitems.push_back(std::move(triangularprismRitem));
 
     // back pryamid structures
