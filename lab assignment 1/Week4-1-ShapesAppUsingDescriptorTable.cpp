@@ -1272,8 +1272,8 @@ void ShapesApp::BuildRenderItems()
 
     auto wavesRitem = std::make_unique<RenderItem>();
     //wavesRitem->World = MathHelper::Identity4x4();
-    XMStoreFloat4x4(&wavesRitem->World, XMMatrixScaling(0.2f, 0.2f, 0.2f));
-    XMStoreFloat4x4(&wavesRitem->TexTransform, XMMatrixScaling(1.f, 1.f, 1.f));
+    XMStoreFloat4x4(&wavesRitem->World, XMMatrixScaling(3.0f, 1.0f, 3.0f) * XMMatrixTranslation(0.0f, -3.0f, 0.0f));
+    XMStoreFloat4x4(&wavesRitem->TexTransform, XMMatrixScaling(5.f, 5.f, 5.f));
     wavesRitem->ObjCBIndex = Index++;
     wavesRitem->Mat = mMaterials["water"].get();
     wavesRitem->Geo = mGeometries["waterGeo"].get();
@@ -1282,7 +1282,7 @@ void ShapesApp::BuildRenderItems()
     wavesRitem->StartIndexLocation = wavesRitem->Geo->DrawArgs["water"].StartIndexLocation;
     wavesRitem->BaseVertexLocation = wavesRitem->Geo->DrawArgs["water"].BaseVertexLocation;
 
-    //// we use mVavesRitem in updatewaves() to set the dynamic VB of the wave renderitem to the current frame VB.
+    // we use mVavesRitem in updatewaves() to set the dynamic VB of the wave renderitem to the current frame VB.
     mWavesRitem = wavesRitem.get();
 
     mRitemLayer[(int)RenderLayer::Transparent].push_back(wavesRitem.get());
