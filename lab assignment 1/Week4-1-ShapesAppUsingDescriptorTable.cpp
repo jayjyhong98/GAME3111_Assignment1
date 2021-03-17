@@ -1138,7 +1138,7 @@ void ShapesApp::BuildPSOs()
 
     transparencyBlendDesc.BlendOp = D3D12_BLEND_OP_ADD,
 
-        transparencyBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
+    transparencyBlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
     transparencyBlendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
     transparencyBlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
     transparencyBlendDesc.LogicOp = D3D12_LOGIC_OP_NOOP;
