@@ -1304,6 +1304,7 @@ void ShapesApp::BuildRenderItems()
     // front pyramid on front box
     auto pyramidRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(16.0f, 5.0f, 16.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(0.0f, 10.5f, 0.0f));
+    XMStoreFloat4x4(&pyramidRitem->TexTransform, XMMatrixScaling(2.f, 8.f, 2.f));
     pyramidRitem->ObjCBIndex = Index++;
     pyramidRitem->Mat = mMaterials["roof0"].get();
     pyramidRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1349,6 +1350,7 @@ void ShapesApp::BuildRenderItems()
         XMMATRIX backWedgeWorld = XMMatrixScaling(3.0f, 2.0f, sizeZ - (5.0 * i)) * XMMatrixRotationY(1.57f) * XMMatrixTranslation(0.0f, 10.0f + (8.0 * i), 25.0f + 1.5 + (sizeZ / 2) - (2.5 * i));
 
         XMStoreFloat4x4(&wedgeRitem->World, frontWedgeWorld);
+        XMStoreFloat4x4(&wedgeRitem->TexTransform, XMMatrixScaling(1.f, 0.5f, 0.5f));
         wedgeRitem->ObjCBIndex = Index++;
         wedgeRitem->Mat = mMaterials["roof0"].get();
         wedgeRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1361,6 +1363,7 @@ void ShapesApp::BuildRenderItems()
 
         wedgeRitem = std::make_unique<RenderItem>();
         XMStoreFloat4x4(&wedgeRitem->World, backWedgeWorld);
+        XMStoreFloat4x4(&wedgeRitem->TexTransform, XMMatrixScaling(1.f, 0.5f, 0.5f));
         wedgeRitem->ObjCBIndex = Index++;
         wedgeRitem->Mat = mMaterials["roof0"].get();
         wedgeRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1376,6 +1379,7 @@ void ShapesApp::BuildRenderItems()
 
         wedgeRitem = std::make_unique<RenderItem>();
         XMStoreFloat4x4(&wedgeRitem->World, leftWedgeWorld);
+        XMStoreFloat4x4(&wedgeRitem->TexTransform, XMMatrixScaling(1.f, 0.5f, 0.5f));
         wedgeRitem->ObjCBIndex = Index++;
         wedgeRitem->Mat = mMaterials["roof0"].get();
         wedgeRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1388,6 +1392,7 @@ void ShapesApp::BuildRenderItems()
 
         wedgeRitem = std::make_unique<RenderItem>();
         XMStoreFloat4x4(&wedgeRitem->World, rightWedgeWorld);
+        XMStoreFloat4x4(&wedgeRitem->TexTransform, XMMatrixScaling(1.f, 0.5f, 0.5f));
         wedgeRitem->ObjCBIndex = Index++;
         wedgeRitem->Mat = mMaterials["roof0"].get();
         wedgeRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1453,7 +1458,8 @@ void ShapesApp::BuildRenderItems()
     // front triangular structure
     auto triangularprismRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(20.0f, 5.0f, 10.0f) * XMMatrixRotationX(-1.57f) * XMMatrixTranslation(0.0f, 15.5f, 7.0f));
-    triangularprismRitem->ObjCBIndex = Index++; // need to be changed
+    XMStoreFloat4x4(&triangularprismRitem->TexTransform, XMMatrixScaling(8.f, 8.f, 8.f));
+    triangularprismRitem->ObjCBIndex = Index++; 
     triangularprismRitem->Mat = mMaterials["roof0"].get();
     triangularprismRitem->Geo = mGeometries["shapeGeo"].get();
     triangularprismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -1466,7 +1472,8 @@ void ShapesApp::BuildRenderItems()
     // back triangular structure
     triangularprismRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(8.0f, 32.0f, 10.0f) * XMMatrixRotationX(-1.57f) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 23.0f, 40.0f));
-    triangularprismRitem->ObjCBIndex = Index++; // need to be changed
+    XMStoreFloat4x4(&triangularprismRitem->TexTransform, XMMatrixScaling(8.f, 8.f, 8.f));
+    triangularprismRitem->ObjCBIndex = Index++; 
     triangularprismRitem->Mat = mMaterials["roof0"].get();
     triangularprismRitem->Geo = mGeometries["shapeGeo"].get();
     triangularprismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
@@ -1481,6 +1488,7 @@ void ShapesApp::BuildRenderItems()
     {
         pyramidRitem = std::make_unique<RenderItem>();
         XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(15.0f, 7.0f, 6.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(9.0f * i, 13.5f, 43.0f));
+        XMStoreFloat4x4(&pyramidRitem->TexTransform, XMMatrixScaling(2.f, 8.f, 2.f));
         pyramidRitem->ObjCBIndex = Index++;
         pyramidRitem->Mat = mMaterials["roof0"].get();
         pyramidRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1500,6 +1508,7 @@ void ShapesApp::BuildRenderItems()
         {
             pyramidRitem = std::make_unique<RenderItem>();
             XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(6.0f, 2.0f, 6.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(18.0f * u, 16.0f, 13.0f + (i * 8.0f)));
+            XMStoreFloat4x4(&pyramidRitem->TexTransform, XMMatrixScaling(2.f, 8.f, 2.f));
             pyramidRitem->ObjCBIndex = Index++;
             pyramidRitem->Mat = mMaterials["roof0"].get();
             pyramidRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1514,8 +1523,8 @@ void ShapesApp::BuildRenderItems()
 
     // pyramid roofs
     pyramidRitem = std::make_unique<RenderItem>();
-    pyramidRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&pyramidRitem->World, XMMatrixScaling(25.0f, 6.0f, 25.0f) * XMMatrixRotationY(3.14f) * XMMatrixTranslation(0.0f, 37.0f, 25.0f));
+    XMStoreFloat4x4(&pyramidRitem->TexTransform, XMMatrixScaling(4.f, 8.f, 4.f));
     pyramidRitem->ObjCBIndex = Index++;
     pyramidRitem->Mat = mMaterials["roof0"].get();
     pyramidRitem->Geo = mGeometries["shapeGeo"].get();
@@ -1529,7 +1538,8 @@ void ShapesApp::BuildRenderItems()
     // top triangle prism
     triangularprismRitem = std::make_unique<RenderItem>();
     XMStoreFloat4x4(&triangularprismRitem->World, XMMatrixScaling(10.0f, 25.0f, 8.0f) * XMMatrixRotationX(-1.57f) * XMMatrixRotationY(-1.57f) * XMMatrixTranslation(0.0f, 38.0f, 25.0f));
-    triangularprismRitem->ObjCBIndex = Index++; // need to be changed
+    XMStoreFloat4x4(&triangularprismRitem->TexTransform, XMMatrixScaling(8.f, 8.f, 8.f));
+    triangularprismRitem->ObjCBIndex = Index++;
     triangularprismRitem->Mat = mMaterials["roof0"].get();
     triangularprismRitem->Geo = mGeometries["shapeGeo"].get();
     triangularprismRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
