@@ -16,7 +16,7 @@ using namespace DirectX::PackedVector;
 #pragma comment(lib, "d3dcompiler.lib")
 #pragma comment(lib, "D3D12.lib")
 
-const int gNumFrameResources = 5;
+const int gNumFrameResources = 3;
 
 // Lightweight structure stores parameters to draw a shape.  This will
 // vary from app-to-app.
@@ -495,28 +495,33 @@ void ShapesApp::UpdateMainPassCB(const GameTimer& gt)
     mMainPassCB.Lights[0].Direction = { 0.57735f, -0.57735f, 0.57735f };
     mMainPassCB.Lights[0].Strength = { 0.8f, 0.8f, 0.8f };
     mMainPassCB.Lights[1].Direction = { -0.57735f, -0.57735f, 0.57735f };
-    mMainPassCB.Lights[1].Strength = { 0.4f, 0.4f, 0.4f };
+    mMainPassCB.Lights[1].Strength = { 1.1f, 1.1f, 1.1f };
     mMainPassCB.Lights[2].Direction = { 0.0f, -0.707f, -0.707f };
-    mMainPassCB.Lights[2].Strength = { 0.2f, 0.2f, 0.2f };
+    mMainPassCB.Lights[2].Strength = { 0.5f, 0.5f, 0.5f };
 
     // Lantern Lights
-    float z = 20.0f;
+    float z = 18.0f;
     for (int i = 3; i < 10; i++)
     {
         mMainPassCB.Lights[i].Position = { 19.0f, 31.0f, z };
-        mMainPassCB.Lights[i].Direction = { -5.0f, 0.0f, 0.0f };
-        mMainPassCB.Lights[i].Strength = { 0.3f, 0.3f, 0.3f };
+        //mMainPassCB.Lights[i].Direction = { -5.0f, 0.0f, 0.0f };
+        mMainPassCB.Lights[i].Strength = { 1.5f, 1.5f, 1.5f };
         mMainPassCB.Lights[i].SpotPower = 1.0;
 
         i++;
 
         mMainPassCB.Lights[i].Position = { -19.0f, 31.0f, z };
-        mMainPassCB.Lights[i].Direction = { 5.0f, 0.0f, 0.0f };
-        mMainPassCB.Lights[i].Strength = { 0.3f, 0.3f, 0.3f };
+        //mMainPassCB.Lights[i].Direction = { 5.0f, 0.0f, 0.0f };
+        mMainPassCB.Lights[i].Strength = { 1.5f, 1.5f, 1.5f };
         mMainPassCB.Lights[i].SpotPower = 1.0;
 
-        z += 4.0f; // increment position to next two set of lights further back
+        z += 5.0f; // increment position to next two set of lights further back
     }
+
+    mMainPassCB.Lights[10].Position = { -48.0f, 71.0f, 35.0f };
+    mMainPassCB.Lights[10].Direction = { 0.0f, 0.0f, 5.0f };
+    mMainPassCB.Lights[10].Strength = { 20.0f, 20.0f, 20.0f };
+    mMainPassCB.Lights[10].SpotPower = 0.1f;
 
     auto currPassCB = mCurrFrameResource->PassCB.get();
     currPassCB->CopyData(0, mMainPassCB);
@@ -1600,9 +1605,23 @@ void ShapesApp::BuildRenderItems()
         }
     }
 
+    // moon!
+    auto sphereRitem = std::make_unique<RenderItem>();
+    XMStoreFloat4x4(&sphereRitem->World, XMMatrixScaling(5.0f, 5.0f, 5.0f) * XMMatrixTranslation(-50.0f, 70.0f, 50.0f));
+    sphereRitem->ObjCBIndex = Index++; // need to be changed
+    sphereRitem->Mat = mMaterials["bricks0"].get();
+    sphereRitem->Geo = mGeometries["shapeGeo"].get();
+    sphereRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+    sphereRitem->IndexCount = sphereRitem->Geo->DrawArgs["sphere"].IndexCount;
+    sphereRitem->StartIndexLocation = sphereRitem->Geo->DrawArgs["sphere"].StartIndexLocation;
+    sphereRitem->BaseVertexLocation = sphereRitem->Geo->DrawArgs["sphere"].BaseVertexLocation;
+    mRitemLayer[(int)RenderLayer::Opaque].push_back(sphereRitem.get());
+    mAllRitems.push_back(std::move(sphereRitem));
+
     auto gridRitem = std::make_unique<RenderItem>();
     //gridRitem->World = MathHelper::Identity4x4();
     XMStoreFloat4x4(&gridRitem->World, XMMatrixScaling(1.5f, 1.5f, 1.5f) * XMMatrixTranslation(0.0f, 0.0f, 20.0f));
+    XMStoreFloat4x4(&gridRitem->TexTransform, XMMatrixScaling(3.0f, 3.0f, 3.0f));
     gridRitem->ObjCBIndex = Index++;
     gridRitem->Mat = mMaterials["tile0"].get();
     gridRitem->Geo = mGeometries["shapeGeo"].get();
