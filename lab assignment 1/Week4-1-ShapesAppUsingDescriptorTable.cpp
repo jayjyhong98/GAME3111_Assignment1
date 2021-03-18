@@ -1124,26 +1124,46 @@ void ShapesApp::BuildTreeSpritesGeometry()
         XMFLOAT3 Pos;
         XMFLOAT2 Size;
     };
-
-    static const int treeCount = 16;
-    std::array<TreeSpriteVertex, 16> vertices;
-    for (UINT i = 0; i < treeCount; ++i)
+    static const int treeCount = 15;
+    int TreeIndex = 0;
+    std::array<TreeSpriteVertex, treeCount> vertices;
+    for (UINT i = 0; i < 5; ++i)
     {
-        float x = MathHelper::RandF(-45.0f, 45.0f);
-        float z = MathHelper::RandF(-45.0f, 45.0f);
-        float y = 3;
+        for (int u = -1; u <= 1; u = u + 2) // one for each side
+        {
+            float x = 35.0f * (float)u;
+            float z = 12.0f * (float)i;
+            float y = 3.0f;
 
+            // Move tree slightly above land height.
+            y += 8.0f;
+
+            vertices[TreeIndex].Pos = XMFLOAT3(x, y, z);
+            vertices[TreeIndex].Size = XMFLOAT2(20.0f, 20.0f);
+
+            TreeIndex++;
+        }
+    }
+
+    for (int i = -2; i < 3; ++i)
+    {
+        float x = 12.0f * i;
+        float z = 60.0f;
+        float y = 3.0f;
+        
         // Move tree slightly above land height.
         y += 8.0f;
-
-        vertices[i].Pos = XMFLOAT3(x, y, z);
-        vertices[i].Size = XMFLOAT2(20.0f, 20.0f);
+        
+        vertices[TreeIndex].Pos = XMFLOAT3(x, y, z);
+        vertices[TreeIndex].Size = XMFLOAT2(20.0f, 20.0f);
+        
+        TreeIndex++;
     }
 
     std::array<std::uint16_t, 16> indices =
     {
         0, 1, 2, 3, 4, 5, 6, 7,
-        8, 9, 10, 11, 12, 13, 14, 15
+        8, 9, 10, 11, 12, 13, 14
     };
 
     const UINT vbByteSize = (UINT)vertices.size() * sizeof(TreeSpriteVertex);
@@ -1772,7 +1792,7 @@ void ShapesApp::BuildRenderItems()
     mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
     mAllRitems.push_back(std::move(gridRitem));
 
-    // All the render items are opaque.
+     //All the render items are opaque.
     /*for (auto& e : mAllRitems)
         mOpaqueRitems.push_back(e.get());*/
 }
