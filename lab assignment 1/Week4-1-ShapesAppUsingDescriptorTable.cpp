@@ -1792,7 +1792,7 @@ void ShapesApp::BuildRenderItems()
     mRitemLayer[(int)RenderLayer::Opaque].push_back(gridRitem.get());
     mAllRitems.push_back(std::move(gridRitem));
 
-    // All the render items are opaque.
+     //All the render items are opaque.
     /*for (auto& e : mAllRitems)
         mOpaqueRitems.push_back(e.get());*/
 }
