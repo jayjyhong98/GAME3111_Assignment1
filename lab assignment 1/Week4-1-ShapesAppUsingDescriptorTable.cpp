@@ -204,6 +204,7 @@ bool ShapesApp::Initialize()
     BuildShadersAndInputLayout();
     BuildShapeGeometry();
     BuildWavesGeometry();
+    BuildTreeSpritesGeometry();
     BuildMaterials();
     BuildRenderItems();
     BuildFrameResources();
@@ -297,6 +298,9 @@ void ShapesApp::Draw(const GameTimer& gt)
     //step 2
     mCommandList->SetPipelineState(mPSOs["alphaTested"].Get());
     DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTested]);
+
+    mCommandList->SetPipelineState(mPSOs["treeSprites"].Get());
+    DrawRenderItems(mCommandList.Get(), mRitemLayer[(int)RenderLayer::AlphaTestedTreeSprites]);
 
     // Indicate a state transition on the resource usage.
     mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(CurrentBackBuffer(),
@@ -613,7 +617,7 @@ void ShapesApp::LoadTextures()
 
     auto treeArrayTex = std::make_unique<Texture>();
     treeArrayTex->Name = "treeArrayTex";
-    treeArrayTex->Filename = L"../Textures/treeArray.dds";
+    treeArrayTex->Filename = L"../Textures/treeArray2.dds";
     ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
         mCommandList.Get(), treeArrayTex->Filename.c_str(),
         treeArrayTex->Resource, treeArrayTex->UploadHeap));
@@ -772,6 +776,18 @@ void ShapesApp::BuildDescriptorHeaps()
 
     srvDesc.Format = yellowTex->GetDesc().Format;
     md3dDevice->CreateShaderResourceView(yellowTex.Get(), &srvDesc, hDescriptor);
+
+    // next descriptor
+    hDescriptor.Offset(1, mCbvSrvDescriptorSize);
+
+    auto desc = treeArrayTex->GetDesc();
+    srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+    srvDesc.Format = treeArrayTex->GetDesc().Format;
+    srvDesc.Texture2DArray.MostDetailedMip = 0;
+    srvDesc.Texture2DArray.MipLevels = -1;
+    srvDesc.Texture2DArray.FirstArraySlice = 0;
+    srvDesc.Texture2DArray.ArraySize = treeArrayTex->GetDesc().DepthOrArraySize;
+    md3dDevice->CreateShaderResourceView(treeArrayTex.Get(), &srvDesc, hDescriptor);
 }
 
 void ShapesApp::BuildShadersAndInputLayout()
@@ -786,7 +802,7 @@ void ShapesApp::BuildShadersAndInputLayout()
     const D3D_SHADER_MACRO alphaTestDefines[] =
     {
         "FOG", "1",
-        "ALPHA_TEST",
+        "ALPHA_TEST",  "1",
         NULL, NULL
     };
 
@@ -794,9 +810,9 @@ void ShapesApp::BuildShadersAndInputLayout()
     mShaders["opaquePS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", defines, "PS", "ps_5_0");
     mShaders["alphaTestedPS"] = d3dUtil::CompileShader(L"Shaders\\Default.hlsl", alphaTestDefines, "PS", "ps_5_0");
 
-    mShaders["treeSpriteVS"] = d3dUtil::CompileShader(L"Shaders\\TreeSprite.hlsl", nullptr, "VS", "vs_5_1");
-    mShaders["treeSpriteGS"] = d3dUtil::CompileShader(L"Shaders\\TreeSprite.hlsl", nullptr, "GS", "gs_5_1");
-    mShaders["treeSpritePS"] = d3dUtil::CompileShader(L"Shaders\\TreeSprite.hlsl", alphaTestDefines, "PS", "ps_5_1");
+    mShaders["treeSpriteVS"] = d3dUtil::CompileShader(L"Shaders\\TreeSprite.hlsl", nullptr, "VS", "vs_5_0");
+    mShaders["treeSpriteGS"] = d3dUtil::CompileShader(L"Shaders\\TreeSprite.hlsl", nullptr, "GS", "gs_5_0");
+    mShaders["treeSpritePS"] = d3dUtil::CompileShader(L"Shaders\\TreeSprite.hlsl", alphaTestDefines, "PS", "ps_5_0");
 
     mInputLayout =
     {
@@ -1363,7 +1379,7 @@ void ShapesApp::BuildMaterials()
     auto treeSprites = std::make_unique<Material>();
     treeSprites->Name = "treeSprites";
     treeSprites->MatCBIndex = Index;
-    treeSprites->DiffuseSrvHeapIndex = 3;
+    treeSprites->DiffuseSrvHeapIndex = Index;
     treeSprites->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     treeSprites->FresnelR0 = XMFLOAT3(0.01f, 0.01f, 0.01f);
     treeSprites->Roughness = 0.125f;
@@ -1404,18 +1420,18 @@ void ShapesApp::BuildRenderItems()
     mRitemLayer[(int)RenderLayer::Transparent].push_back(wavesRitem.get());
     mAllRitems.push_back(std::move(wavesRitem));
 
-    //auto treeSpritesRitem = std::make_unique<RenderItem>();
-    //treeSpritesRitem->World = MathHelper::Identity4x4();
-    //treeSpritesRitem->ObjCBIndex = 3;
-    //treeSpritesRitem->Mat = mMaterials["treeSprites"].get();
-    //treeSpritesRitem->Geo = mGeometries["treeSpritesGeo"].get();
-    ////step2
-    //treeSpritesRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
-    //treeSpritesRitem->IndexCount = treeSpritesRitem->Geo->DrawArgs["points"].IndexCount;
-    //treeSpritesRitem->StartIndexLocation = treeSpritesRitem->Geo->DrawArgs["points"].StartIndexLocation;
-    //treeSpritesRitem->BaseVertexLocation = treeSpritesRitem->Geo->DrawArgs["points"].BaseVertexLocation;
-    //mRitemLayer[(int)RenderLayer::AlphaTestedTreeSprites].push_back(treeSpritesRitem.get());
-    //mAllRitems.push_back(std::move(treeSpritesRitem));
+    auto treeSpritesRitem = std::make_unique<RenderItem>();
+    treeSpritesRitem->World = MathHelper::Identity4x4();
+    treeSpritesRitem->ObjCBIndex = 3;
+    treeSpritesRitem->Mat = mMaterials["treeSprites"].get();
+    treeSpritesRitem->Geo = mGeometries["treeSpritesGeo"].get();
+    //step2
+    treeSpritesRitem->PrimitiveType = D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+    treeSpritesRitem->IndexCount = treeSpritesRitem->Geo->DrawArgs["points"].IndexCount;
+    treeSpritesRitem->StartIndexLocation = treeSpritesRitem->Geo->DrawArgs["points"].StartIndexLocation;
+    treeSpritesRitem->BaseVertexLocation = treeSpritesRitem->Geo->DrawArgs["points"].BaseVertexLocation;
+    mRitemLayer[(int)RenderLayer::AlphaTestedTreeSprites].push_back(treeSpritesRitem.get());
+    mAllRitems.push_back(std::move(treeSpritesRitem));
 
     // front box
     auto boxRItem = std::make_unique<RenderItem>();
