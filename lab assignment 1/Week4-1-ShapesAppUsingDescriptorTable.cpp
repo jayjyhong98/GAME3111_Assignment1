@@ -617,7 +617,7 @@ void ShapesApp::LoadTextures()
 
     auto treeArrayTex = std::make_unique<Texture>();
     treeArrayTex->Name = "treeArrayTex";
-    treeArrayTex->Filename = L"../Textures/treeArray.dds";
+    treeArrayTex->Filename = L"../Textures/treeArray2.dds";
     ThrowIfFailed(DirectX::CreateDDSTextureFromFile12(md3dDevice.Get(),
         mCommandList.Get(), treeArrayTex->Filename.c_str(),
         treeArrayTex->Resource, treeArrayTex->UploadHeap));
@@ -784,7 +784,7 @@ void ShapesApp::BuildDescriptorHeaps()
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
     srvDesc.Format = treeArrayTex->GetDesc().Format;
     srvDesc.Texture2DArray.MostDetailedMip = 0;
-    srvDesc.Texture2DArray.MipLevels = treeArrayTex->GetDesc().MipLevels;
+    srvDesc.Texture2DArray.MipLevels = -1;
     srvDesc.Texture2DArray.FirstArraySlice = 0;
     srvDesc.Texture2DArray.ArraySize = treeArrayTex->GetDesc().DepthOrArraySize;
     md3dDevice->CreateShaderResourceView(treeArrayTex.Get(), &srvDesc, hDescriptor);
@@ -1379,7 +1379,7 @@ void ShapesApp::BuildMaterials()
     auto treeSprites = std::make_unique<Material>();
     treeSprites->Name = "treeSprites";
     treeSprites->MatCBIndex = Index;
-    treeSprites->DiffuseSrvHeapIndex = 3;
+    treeSprites->DiffuseSrvHeapIndex = Index;
     treeSprites->DiffuseAlbedo = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
     treeSprites->FresnelR0 = XMFLOAT3(0.01f, 0.01f, 0.01f);
     treeSprites->Roughness = 0.125f;
